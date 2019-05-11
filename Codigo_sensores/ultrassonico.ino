@@ -14,7 +14,7 @@ void ultrassonico(gpio_num_t A, gpio_num_t B)
 {
   gpio_set_direction(A, GPIO_MODE_OUTPUT);
   gpio_set_direction(B, GPIO_MODE_INPUT);
-  gpio_set_intr_type(B, GPIO_INTR_NEGEDGE);
+  gpio_set_intr_type(B, GPIO_INTR_HIGH_LEVEL);
   gpio_set_pull_mode(B, GPIO_PULLUP_ONLY);
   gpio_intr_enable(B);
   gpio_install_isr_service(0);
