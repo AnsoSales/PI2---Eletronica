@@ -1,0 +1,27 @@
+const int GPIO_35 = GPIO_NUM_35; //GPIO 35 DA ESP32
+ 
+int temp_digital= 0;
+double Voltage = 0;
+double tempC = 0,media=0;
+ 
+void setup(){
+Serial.begin(9600);
+}
+ 
+void loop(){
+ 
+
+  for(int i = 0; i<10; i++)
+  {
+    temp_digital = analogRead(GPIO_35);   //leitura da gpio 35 da esp32
+    media += temp_digital/10;
+  }
+    Voltage = (media / 2048.0) * 3300;
+    tempC = Voltage * 0.1; 
+
+Serial.print("\t Temperatura em C = ");
+Serial.print(tempC,2);
+Serial.print("\n");
+media=0;
+delay(1000);
+}
