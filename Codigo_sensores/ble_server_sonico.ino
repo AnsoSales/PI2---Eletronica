@@ -97,7 +97,7 @@ Serial.begin(115200);
   BLEServer *server = BLEDevice::createServer();//Cria o servidor Bluetooth
   server->setCallbacks(new ServerCallbacks());//seta funcao de callback para o servidor
 
-  BLEService *service0 = server->createService(Agua);//servico da agua
+  BLEService *service0 = server->createService(Alcool);//servico da agua
   BLEService *service1 = server->createService(Oleo);//servico do oleo
   BLEService *service2 = server->createService(Essencia1);//servico da essencia 1
   BLEService *service3 = server->createService(Essencia2);//servico da essencia 2
@@ -134,6 +134,7 @@ Serial.begin(115200);
     
     // Inicia o advertisement (descoberta do ESP32)
     server->getAdvertising()->start();
+}
 void loop() 
 {
       if (deviceConnected) {
