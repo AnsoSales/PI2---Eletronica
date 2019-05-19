@@ -183,6 +183,9 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
       characteristicTX5->setValue("limpeza");
       characteristicTX5->notify();
       delay(2000);
+      characteristicTX5->setValue("limpeza Concluida");
+      characteristicTX5->notify();
+      comando = 0;
     }
     delay(100);
   }
