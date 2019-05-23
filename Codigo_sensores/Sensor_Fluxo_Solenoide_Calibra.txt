@@ -4,7 +4,7 @@ static void atualizaVazao();
 volatile int pulsos_vazao = 0;
 float vazao = 0,media=0,x_litros=1,tempo=0;
 int i=0;
-// interrupÁ„o
+// interrup√ß√£o
 void IRAM_ATTR gpio_isr_handler_up(void* arg)
 {
   pulsos_vazao++;
@@ -12,12 +12,12 @@ void IRAM_ATTR gpio_isr_handler_up(void* arg)
 }
  
 /*
-Inicializa sensor de vaz„o com interrupÁ„o na subida de um pulso
+Inicializa sensor de vaz√£o com interrup√ß√£o na subida de um pulso
  */
 void inicia_rele()
 {
-   gpio_set_direction(GPIO_NUM_34, GPIO_MODE_OUTPUT);
-   digitalWrite(GPIO_NUM_34, HIGH);     
+   gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);  
+   digitalWrite(GPIO_NUM_5, LOW);   
 }
 
  
@@ -32,15 +32,16 @@ void iniciaVazao(gpio_num_t Port){
  
 void setup() {
   Serial.begin(115200);
- 
-  iniciaVazao((gpio_num_t) portaVazao);
   inicia_rele();
+  Serial.println("\nAguardando 10 seg para iniciar a solenoide eo sensor de fluxo:");
+  delay(10000);
+  iniciaVazao((gpio_num_t) portaVazao);
+  digitalWrite(GPIO_NUM_5, HIGH);
   calibra();
-  
-  digitalWrite(GPIO_NUM_34, LOW);
+  digitalWrite(GPIO_NUM_5, LOW);
   delay(10000);
   Serial.println("\nAguardando 10 seg para ligar o solenoide:");
-  enche_recipiente();
+ // enche_recipiente();
   Serial.println("Processo Finalizado:");
 }
 
@@ -48,6 +49,7 @@ void enche_recipiente()
 {
  tempo=((x_litros/media)*1000); //tempo necessario para encher recipiente com x_litros em mili segundos
  Serial.println("\nDevemos aguardar:");
+
  Serial.print(tempo);
  digitalWrite(GPIO_NUM_34, HIGH);
  delay(tempo);
@@ -71,11 +73,11 @@ void calibra() {
           
             if (i == 60)
             {
-              media = media / 3600;                    //faz a mÈdia retornando em Litros por Segundo
+              media = media / 3600;                    //faz a m√©dia retornando em Litros por Segundo
               Serial.print("\nMedia por minuto = "); //Imprime a frase Media por minuto =
               Serial.print(media);                   //Imprime o valor da media
               Serial.println(" L/min - ");           //Imprime L/min
-              i = 0;                                 //Zera a vari·vel i para uma nova contagem
+              i = 0;                                 //Zera a vari√°vel i para uma nova contagem
               break;
             }
         }
