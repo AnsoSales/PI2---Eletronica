@@ -16,8 +16,8 @@ Inicializa sensor de vazão com interrupção na subida de um pulso
  */
 void inicia_rele()
 {
-   gpio_set_direction(GPIO_NUM_5, GPIO_MODE_OUTPUT);  
-   digitalWrite(GPIO_NUM_5, LOW);   
+   gpio_set_direction(GPIO_NUM_18, GPIO_MODE_OUTPUT);  
+   digitalWrite(GPIO_NUM_18, LOW);   
 }
 
  
@@ -36,24 +36,34 @@ void setup() {
   Serial.println("\nAguardando 10 seg para iniciar a solenoide eo sensor de fluxo:");
   delay(10000);
   iniciaVazao((gpio_num_t) portaVazao);
-  digitalWrite(GPIO_NUM_5, HIGH);
-  calibra();
-  digitalWrite(GPIO_NUM_5, LOW);
-  delay(10000);
-  Serial.println("\nAguardando 10 seg para ligar o solenoide:");
+  enche_recipiente(); //enche o recipiente de acordo com a vazao eo volume requerido
+
+  
+  //calibra();
+     
+  digitalWrite(GPIO_NUM_18, LOW);
+ // delay(10000);
+ // Serial.println("\nAguardando 10 seg para ligar o solenoide:");
  // enche_recipiente();
   Serial.println("Processo Finalizado:");
 }
 
 void enche_recipiente()
 {
- tempo=((x_litros/media)*1000); //tempo necessario para encher recipiente com x_litros em mili segundos
- Serial.println("\nDevemos aguardar:");
-
- Serial.print(tempo);
- digitalWrite(GPIO_NUM_34, HIGH);
- delay(tempo);
- digitalWrite(GPIO_NUM_34, LOW); 
+  digitalWrite(GPIO_NUM_18, HIGH);  //libera a solenoide
+  pulsos_vazao = 0;                // zera a variavel de pulsos
+  sei();                           //libera a interrupçao
+  delay(1000);                     //espera 1 seg
+  cli();                           //desativa a interrupçao
+  vazao = (pulsos_vazao/5.5)/(60);        //vazao em litros por segundo
+  tempo=((x_litros/vazao)*1000); //tempo necessario para encher recipiente com x_litros em mili segundos
+  Serial.println("\nDevemos aguardar:");
+  Serial.print(tempo/1000);
+  Serial.println("\nVazao: L/s");
+  Serial.print(vazao);
+  
+  delay(tempo);
+  digitalWrite(GPIO_NUM_18, LOW); 
 }
 
  
@@ -68,7 +78,7 @@ void calibra() {
             vazao = pulsos_vazao/5.5;
             media = media+vazao;
             i++;
-            Serial.println("Leitura do Sensor de Vazao:");
+            Serial.println("Vazao L/m:");
             Serial.println(vazao);
           
             if (i == 60)
