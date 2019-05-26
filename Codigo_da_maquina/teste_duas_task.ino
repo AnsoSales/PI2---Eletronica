@@ -113,12 +113,12 @@ void setup()
   BLEService *service5 = server->createService(feedback_comandos);//servico de comandos
 
   //cria as caracteristicas de notificacao.
-  characteristicTX0 = service0->createCharacteristic(CHARACTERISTIC_UUID_TX0, BLECharacteristic::PROPERTY_NOTIFY);//cria as caracteristicas de notificacao.
-  characteristicTX1 = service1->createCharacteristic(CHARACTERISTIC_UUID_TX1, BLECharacteristic::PROPERTY_NOTIFY);
-  characteristicTX2 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX2, BLECharacteristic::PROPERTY_NOTIFY);
-  characteristicTX3 = service3->createCharacteristic(CHARACTERISTIC_UUID_TX3, BLECharacteristic::PROPERTY_NOTIFY);
-  characteristicTX4 = service4->createCharacteristic(CHARACTERISTIC_UUID_TX4, BLECharacteristic::PROPERTY_NOTIFY);
-  characteristicTX5 = service5->createCharacteristic(CHARACTERISTIC_UUID_TX5, BLECharacteristic::PROPERTY_NOTIFY);
+  characteristicTX0 = service0->createCharacteristic(CHARACTERISTIC_UUID_TX0, BLECharacteristic::PROPERTY_READ);//cria as caracteristicas de notificacao.
+  characteristicTX1 = service1->createCharacteristic(CHARACTERISTIC_UUID_TX1, BLECharacteristic::PROPERTY_READ);
+  characteristicTX2 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX2, BLECharacteristic::PROPERTY_READ);
+  characteristicTX3 = service3->createCharacteristic(CHARACTERISTIC_UUID_TX3, BLECharacteristic::PROPERTY_READ);
+  characteristicTX4 = service4->createCharacteristic(CHARACTERISTIC_UUID_TX4, BLECharacteristic::PROPERTY_READ);
+  characteristicTX5 = service5->createCharacteristic(CHARACTERISTIC_UUID_TX5, BLECharacteristic::PROPERTY_READ);
 
   //adiciona descritor a caracteristica.
   characteristicTX0 ->addDescriptor(new BLE2902());
