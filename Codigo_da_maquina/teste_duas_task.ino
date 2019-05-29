@@ -166,7 +166,7 @@ void loop()//O loop() sempre será atribuído ao core 1 automaticamente pelo sis
   //dtostrf(pagode,2,2,txString2);
   characteristicTX0->setValue(txString); //seta o valor que a caracteristica notificará (enviar) 
   characteristicTX0->notify(); 
-  delay(100);//Mantem o processador 1 em estado ocioso por 1seg
+  delay(100);//Mantem o processador 1 em estado ocioso por 0,1seg
 }
  
 void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
