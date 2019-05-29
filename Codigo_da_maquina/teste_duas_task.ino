@@ -16,7 +16,7 @@ int comando = 0;
 #define echo GPIO_NUM_25
 
 
-#define Agua  "2aaa9a64-6c81-4718-95eb-92fcdc1f95c8"
+#define Alcool  "2aaa9a64-6c81-4718-95eb-92fcdc1f95c8"
 #define CHARACTERISTIC_UUID_TX0 "a140d3d3-4ece-4c37-9a12-37de04b65e4b"
 
 #define Oleo "c4352ec5-7869-462b-b064-9065a9a55800"
@@ -79,9 +79,7 @@ void ultrassonico(gpio_num_t A, gpio_num_t B)
   gpio_set_direction(B, GPIO_MODE_INPUT);
 }
 void sonico(gpio_num_t A, gpio_num_t B)
-{
-  
-    
+{  
   gpio_set_level(A,0);
   delayMicroseconds(2);
   gpio_set_level(A,1);
@@ -105,7 +103,7 @@ void setup()
   BLEServer *server = BLEDevice::createServer();//Cria o servidor Bluetooth
   server->setCallbacks(new ServerCallbacks());//seta funcao de callback para o servidor
 
-  BLEService *service0 = server->createService(Agua);//servico da agua
+  BLEService *service0 = server->createService(Alcool);//servico da agua
   BLEService *service1 = server->createService(Oleo);//servico do oleo
   BLEService *service2 = server->createService(Essencia1);//servico da essencia 1
   BLEService *service3 = server->createService(Essencia2);//servico da essencia 2
