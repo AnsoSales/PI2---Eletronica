@@ -1,54 +1,48 @@
-/* Programa para Calibração do HX711
-Blog Eletrogate - http://blog.eletrogate.com/balanca-digital-com-arduino-aprenda-a-usar-a-celula-de-carga
- Arduino UNO - IDE 1.8.5 - Modulo HX711 - celulas de Carga 50 Kg
- Gustavo Murta   17/abril/2019
- Biblioteca https://github.com/bogde/HX711
- Baseado em https://www.hackster.io/MOHAN_CHANDALURU/hx711-load-cell-amplifier-interface-with-arduino-fa47f3
-*/
+
  
 #include "HX711.h"                    // Biblioteca HX711 
 #define DOUT  GPIO_NUM_32                      // HX711 DATA OUT = pino A0 do Arduino 
 #define CLK   GPIO_NUM_33                       // HX711 SCK IN = pino A1 do Arduino 
  
-HX711 balanca;   // define instancia balança HX711
+HX711 balanca;   // define instancia balanÃ§a HX711
  
-float calibration_factor = 42130;   // fator de calibração para teste inicial
+float calibration_factor = 42130;   // fator de calibraÃ§Ã£o para teste inicial
  
 void setup()
 {
   
   Serial.begin(115200);   // monitor serial 9600 Bps
-  balanca.begin(DOUT, CLK);      // inicializa a balança
+  balanca.begin(DOUT, CLK);      // inicializa a balanÃ§a
   Serial.println();   // salta uma linha
-  Serial.println("HX711 - Calibracao da Balança");   // imprime no monitor serial
+  Serial.println("HX711 - Calibracao da BalanÃ§a");   // imprime no monitor serial
   Serial.println("Remova o peso da balanca");
-  Serial.println("Depois que as leituras começarem, coloque um peso conhecido sobre a Balança");
-  Serial.println("Pressione a,s,d,f para aumentar Fator de Calibração por 10,100,1000,10000 respectivamente");
-  Serial.println("Pressione z,x,c,v para diminuir Fator de Calibração por 10,100,1000,10000 respectivamente");
-  Serial.println("Após leitura correta do peso, pressione t para TARA(zerar) ");
+  Serial.println("Depois que as leituras comeÃ§arem, coloque um peso conhecido sobre a BalanÃ§a");
+  Serial.println("Pressione a,s,d,f para aumentar Fator de CalibraÃ§Ã£o por 10,100,1000,10000 respectivamente");
+  Serial.println("Pressione z,x,c,v para diminuir Fator de CalibraÃ§Ã£o por 10,100,1000,10000 respectivamente");
+  Serial.println("ApÃ³s leitura correta do peso, pressione t para TARA(zerar) ");
  
-  balanca.set_scale();   // configura a escala da Balança
-  zeraBalanca ();   // zera a Balança
+  balanca.set_scale();   // configura a escala da BalanÃ§a
+  zeraBalanca ();   // zera a BalanÃ§a
 }
  
 void zeraBalanca ()
 {
   Serial.println();   // salta uma linha
-  balanca.tare();   // zera a Balança
-  Serial.println("Balança Zerada ");
+  balanca.tare();   // zera a BalanÃ§a
+  Serial.println("BalanÃ§a Zerada ");
 }
  
 void loop()
 {
-  balanca.set_scale(calibration_factor);   // ajusta fator de calibração
+  balanca.set_scale(calibration_factor);   // ajusta fator de calibraÃ§Ã£o
   Serial.print("Peso: ");   // imprime no monitor serial
-  Serial.print(balanca.get_units(), 3);   // imprime peso da balança com 3 casas decimais
+  Serial.print(balanca.get_units(), 3);   // imprime peso da balanÃ§a com 3 casas decimais
   Serial.print(" kg");
-  Serial.print("      Fator de Calibração: ");   // imprime no monitor serial
-  Serial.println(calibration_factor);   // imprime fator de calibração
+  Serial.print("      Fator de CalibraÃ§Ã£o: ");   // imprime no monitor serial
+  Serial.println(calibration_factor);   // imprime fator de calibraÃ§Ã£o
   delay(500) ;   // atraso de 0,5 segundo
  
-  if (Serial.available())   // reconhece letra para ajuste do fator de calibração
+  if (Serial.available())   // reconhece letra para ajuste do fator de calibraÃ§Ã£o
   {
    char temp = Serial.read();
    if (temp == '+' || temp == 'a')   // a = aumenta 10
@@ -67,6 +61,6 @@ void loop()
    calibration_factor += 10000;
    else if (temp == 'v')   // v = dimuni 10000
    calibration_factor -= 10000;
-   else if (temp == 't') zeraBalanca ();   // t = zera a Balança
+   else if (temp == 't') zeraBalanca ();   // t = zera a BalanÃ§a
   }
 }
