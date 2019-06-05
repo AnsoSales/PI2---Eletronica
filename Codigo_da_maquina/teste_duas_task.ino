@@ -4,7 +4,8 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 
-BLECharacteristic *characteristicTX0, *characteristicTX1, *characteristicTX2, *characteristicTX3,*characteristicTX4, *characteristicTX5;
+BLECharacteristic *characteristicTX0, *characteristicTX1, *characteristicTX2, *characteristicTX3,*characteristicTX4, *characteristicTX5,
+*characteristicTX6, *characteristicTX7;
 
 bool deviceConnected = false;
 float tempo,volume,dist,media,altura,raio = 0.0;
