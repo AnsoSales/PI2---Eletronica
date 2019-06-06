@@ -4,8 +4,7 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 
-BLECharacteristic *characteristicTX0, *characteristicTX1, *characteristicTX2, *characteristicTX3,*characteristicTX4, *characteristicTX5,
-*characteristicTX6, *characteristicTX7;
+BLECharacteristic *characteristicTX0, *characteristicTX1, *characteristicTX2, *characteristicTX3,*characteristicTX4, *characteristicTX5, *characteristicTX6;
 
 bool deviceConnected = false;
 float tempo,volume,dist,media,altura,raio = 0.0;
@@ -23,18 +22,21 @@ int comando = 0;
 #define Oleo "c4352ec5-7869-462b-b064-9065a9a55800"
 #define CHARACTERISTIC_UUID_TX1 "17df5d0b-7068-4f0e-93d3-49033485eef5"
 
-#define Essencia1 "30bc2c8b-8f34-4ecc-abd6-213827478e2d"
+#define Essencias "30bc2c8b-8f34-4ecc-abd6-213827478e2d"
 #define CHARACTERISTIC_UUID_TX2 "405e4e26-a4de-4ff8-b2a2-c8a9465f2a6c"
-
-#define Essencia2 "d5a74415-fc98-420d-a336-8238b4e54f5e"
 #define CHARACTERISTIC_UUID_TX3 "9960735b-885f-455b-b3fd-e37f526eadd1"
 
 #define Temperatura "1ec6580b-37ec-4205-b8ee-702c3e159347"
 #define CHARACTERISTIC_UUID_TX4 "e86e8e83-2db0-4f6f-b2c3-7dfe6f3d4e22"
+#define CHARACTERISTIC_UUID_TX7 "a60744fa-dee3-48ec-ad65-8c999eb4a3f7"
+
+#define Soda "c267d9d8-7022-48f1-a079-4474e99a81d5"
+#define CHARACTERISTIC_UUID_TX6 "05ef93f2-7477-43cf-ab64-20ceb0609e82"
 
 #define feedback_comandos "94b06173-3204-49d3-a0e9-f8fa8c762d42"
 #define CHARACTERISTIC_UUID_TX5 "2825de61-5255-45ff-9bc7-0917bf54c2de"
 #define CHARACTERISTIC_UUID_RX5 "a0b632f3-10e4-4917-9292-a335b1ff9409"
+
 
 
 class CharacteristicCallbacks: public BLECharacteristicCallbacks {
@@ -106,28 +108,30 @@ void setup()
 
   BLEService *service0 = server->createService(Alcool);//servico da agua
   BLEService *service1 = server->createService(Oleo);//servico do oleo
-  BLEService *service2 = server->createService(Essencia1);//servico da essencia 1
-  BLEService *service3 = server->createService(Essencia2);//servico da essencia 2
+  BLEService *service2 = server->createService(Essencias);//servico da essencia 1
   BLEService *service4 = server->createService(Temperatura);//servico da temperatura
   BLEService *service5 = server->createService(feedback_comandos);//servico de comandos
-
+  BLEService *service6 = server->createService(Soda);//servico da soda
+  
   //cria as caracteristicas de notificacao.
   characteristicTX0 = service0->createCharacteristic(CHARACTERISTIC_UUID_TX0, BLECharacteristic::PROPERTY_READ);//cria as caracteristicas de notificacao.
   characteristicTX1 = service1->createCharacteristic(CHARACTERISTIC_UUID_TX1, BLECharacteristic::PROPERTY_READ);
   characteristicTX2 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX2, BLECharacteristic::PROPERTY_READ);
-  characteristicTX3 = service3->createCharacteristic(CHARACTERISTIC_UUID_TX3, BLECharacteristic::PROPERTY_READ);
   characteristicTX4 = service4->createCharacteristic(CHARACTERISTIC_UUID_TX4, BLECharacteristic::PROPERTY_READ);
   characteristicTX5 = service5->createCharacteristic(CHARACTERISTIC_UUID_TX5, BLECharacteristic::PROPERTY_READ);
+  characteristicTX6 = service6->createCharacteristic(CHARACTERISTIC_UUID_TX6, BLECharacteristic::PROPERTY_READ);
 
   //adiciona descritor a caracteristica.
   characteristicTX0 ->addDescriptor(new BLE2902());
   characteristicTX1 ->addDescriptor(new BLE2902());
   characteristicTX2 ->addDescriptor(new BLE2902());
-  characteristicTX3 ->addDescriptor(new BLE2902());
   characteristicTX4 ->addDescriptor(new BLE2902());
   characteristicTX5 ->addDescriptor(new BLE2902());
-
+  characteristicTX6 ->addDescriptor(new BLE2902());
+  
   BLECharacteristic *characteristic0 = service5->createCharacteristic(CHARACTERISTIC_UUID_RX5,BLECharacteristic::PROPERTY_WRITE);
+  BLECharacteristic *characteristic1 = service4->createCharacteristic(CHARACTERISTIC_UUID_TX7,BLECharacteristic::PROPERTY_READ);
+  BLECharacteristic *characteristic2 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX3,BLECharacteristic::PROPERTY_READ);
 
     characteristic0->setCallbacks(new CharacteristicCallbacks());//seta a funcao de callback no servico 5.
     
@@ -135,9 +139,9 @@ void setup()
     service0->start();
     service1->start();
     service2->start();
-    service3->start();
     service4->start();
     service5->start();
+    service6->start();
     
     // Inicia o advertisement (descoberta do ESP32)
     server->getAdvertising()->start();
