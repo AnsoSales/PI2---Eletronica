@@ -7,13 +7,14 @@
 BLECharacteristic *characteristicTX0, *characteristicTX1, *characteristicTX2, *characteristicTX3,*characteristicTX4, *characteristicTX5, *characteristicTX6;
 
 bool deviceConnected = false;
-float tempo,volume,dist,media,altura,raio = 0.0;
+float tempo,volume,dist1,dist2,media1,media2,altura,raio = 0.0;
 int comando = 0;
 //unsigned long previousMicros, timeout = 20000UL;
 //unsigned int F, B, H;
 //float Q[]={1e-5}, R[1] = {2.92e-3};
 #define trigger GPIO_NUM_26
-#define echo GPIO_NUM_25
+#define echo1 GPIO_NUM_39
+#define echo2 GPIO_NUM_34
 
 
 #define Alcool  "2aaa9a64-6c81-4718-95eb-92fcdc1f95c8"
@@ -48,18 +49,43 @@ class CharacteristicCallbacks: public BLECharacteristicCallbacks {
                for (int i = 0; i < rxValue.length(); i++) {
              //Serial.print(rxValue[i]);
                }
-               Serial.println();
-                if (rxValue.find("receita1") != -1) { 
+              // Serial.println();
+                if (rxValue.find("receita1-") != -1) 
+               { 
                 comando = 1;
                }
-               else if (rxValue.find("receita2") != -1) {
+               else if (rxValue.find("receita2-") != -1) 
+               {
                 comando = 2;
                }
-                else if (rxValue.find("receita3") != -1) { 
+                else if (rxValue.find("receita3-") != -1) 
+                { 
                 comando = 3;
                }
-               else if (rxValue.find("limpeza") != -1) {
+               else if (rxValue.find("receita1-0") != -1) 
+               {
                 comando = 4;
+               }
+                else if (rxValue.find("receita2-0") != -1) 
+                { 
+                comando = 5;
+               }
+               else if (rxValue.find("receita3-0") != -1) 
+               {
+                comando = 6;
+               }
+                else if (rxValue.find("receita1-1") != -1) 
+               { 
+                comando = 7;
+               }
+               else if (rxValue.find("receita2-1") != -1) {
+                comando = 8;
+               }
+                else if (rxValue.find("receita3-1") != -1) { 
+                comando = 9;
+               }
+               else if (rxValue.find("limpeza") != -1) {
+                comando = 10;
                }
           }
      }
@@ -100,7 +126,9 @@ void setup()
 {
   Serial.begin(115200);//Inicia a comunicaçao serial
   pinMode(13, OUTPUT);//Define o led Onboard como saída
-  ultrassonico(trigger,echo);
+  ultrassonico(trigger,echo1);
+  delay(10);
+  ultrassonico(trigger,echo2);
   BLEDevice::init("Maquina de Sabao");//Da nome ao servidor bluetooth
 
   BLEServer *server = BLEDevice::createServer();//Cria o servidor Bluetooth
@@ -110,16 +138,16 @@ void setup()
   BLEService *service1 = server->createService(Oleo);//servico do oleo
   BLEService *service2 = server->createService(Essencias);//servico da essencia 1
   BLEService *service4 = server->createService(Temperatura);//servico da temperatura
-  BLEService *service5 = server->createService(feedback_comandos);//servico de comandos
-  BLEService *service6 = server->createService(Soda);//servico da soda
+  BLEService *service5 = server->createService(Soda);//servico de comandos
+  BLEService *service6 = server->createService(feedback_comandos);//servico da soda
   
   //cria as caracteristicas de notificacao.
   characteristicTX0 = service0->createCharacteristic(CHARACTERISTIC_UUID_TX0, BLECharacteristic::PROPERTY_READ);//cria as caracteristicas de notificacao.
   characteristicTX1 = service1->createCharacteristic(CHARACTERISTIC_UUID_TX1, BLECharacteristic::PROPERTY_READ);
   characteristicTX2 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX2, BLECharacteristic::PROPERTY_READ);
   characteristicTX4 = service4->createCharacteristic(CHARACTERISTIC_UUID_TX4, BLECharacteristic::PROPERTY_READ);
-  characteristicTX5 = service5->createCharacteristic(CHARACTERISTIC_UUID_TX5, BLECharacteristic::PROPERTY_READ);
-  characteristicTX6 = service6->createCharacteristic(CHARACTERISTIC_UUID_TX6, BLECharacteristic::PROPERTY_READ);
+  characteristicTX6 = service5->createCharacteristic(CHARACTERISTIC_UUID_TX6, BLECharacteristic::PROPERTY_READ);
+  characteristicTX5 = service6->createCharacteristic(CHARACTERISTIC_UUID_TX5, BLECharacteristic::PROPERTY_READ);
 
   //adiciona descritor a caracteristica.
   characteristicTX0 ->addDescriptor(new BLE2902());
@@ -129,7 +157,7 @@ void setup()
   characteristicTX5 ->addDescriptor(new BLE2902());
   characteristicTX6 ->addDescriptor(new BLE2902());
   
-  BLECharacteristic *characteristic0 = service5->createCharacteristic(CHARACTERISTIC_UUID_RX5,BLECharacteristic::PROPERTY_WRITE);
+  BLECharacteristic *characteristic0 = service6->createCharacteristic(CHARACTERISTIC_UUID_RX5,BLECharacteristic::PROPERTY_WRITE);
   BLECharacteristic *characteristic1 = service4->createCharacteristic(CHARACTERISTIC_UUID_TX7,BLECharacteristic::PROPERTY_READ);
   BLECharacteristic *characteristic2 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX3,BLECharacteristic::PROPERTY_READ);
 
@@ -155,10 +183,15 @@ void setup()
 void loop()//O loop() sempre será atribuído ao core 1 automaticamente pelo sistema, com prioridade 1
 {
   Serial.printf("\n Tempo corrido: %d");
-  sonico(trigger,echo);
-    dist= (tempo/29/2)-1;
-    media = (dist *(1-0.8))+(media*0.8);
-    altura = 8.5-media;
+  sonico(trigger,echo1);
+  dist1= (tempo/29/2)-1;
+  delay(70);
+  sonico(trigger,echo2);
+  dist2= (tempo/29/2)-1;
+  delay(70);
+    media1 = (dist1 *(1-0.8))+(media1*0.8);
+    media2 = (dist2 *(1-0.8))+(media2*0.8);
+    altura = 8.5-media1;
     if (altura<0)
     {
       altura = 0;
@@ -167,10 +200,12 @@ void loop()//O loop() sempre será atribuído ao core 1 automaticamente pelo sis
     volume = (3.141592*(altura)/3)*(raio*raio + raio*2.25 +2.25*2.25);
     char txString[8],txString2[8];
       
-  dtostrf(volume,2,2,txString);
-  //dtostrf(pagode,2,2,txString2);
+  dtostrf(media1,2,2,txString);
+  dtostrf(media2,2,2,txString2);
   characteristicTX0->setValue(txString); //seta o valor que a caracteristica notificará (enviar) 
   characteristicTX0->notify(); 
+  characteristicTX1->setValue(txString2); //seta o valor que a caracteristica notificará (enviar) 
+  characteristicTX1->notify();
   delay(100);//Mantem o processador 1 em estado ocioso por 0,1seg
 }
  
@@ -179,17 +214,52 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
   Serial.printf("\nloop2() em core: %d", xPortGetCoreID());//Mostra no monitor em qual core o loop2() foi chamado
   while (1)//Pisca o led infinitamente
   {
-    digitalWrite(13, !digitalRead(13));
+    digitalWrite(13, HIGH);
     Serial.print(comando);
-    if(comando == 4)
+    characteristicTX5->setValue("pode comecar");
+    characteristicTX5->notify();
+    switch (comando)
     {
+      case 1:
+      digitalWrite(13, HIGH);
       characteristicTX5->setValue("limpeza");
       characteristicTX5->notify();
       delay(2000);
+      digitalWrite(13, LOW);
       characteristicTX5->setValue("limpeza Concluida");
       characteristicTX5->notify();
       comando = 0;
-    }
+      delay(2000);
+      break;
+      case 2:
+      digitalWrite(13, HIGH);
+      characteristicTX5->setValue("4");
+      characteristicTX5->notify();
+      delay(2000);
+      characteristicTX5->setValue("3");
+      characteristicTX5->notify();
+      delay(2000);
+      characteristicTX5->setValue("2");
+      characteristicTX5->notify();
+      delay(2000);
+      characteristicTX5->setValue("1");
+      characteristicTX5->notify();
+      delay(2000);
+      characteristicTX5->setValue("FIM");
+      characteristicTX5->notify();
+      delay(2000);
+      digitalWrite(13, LOW);
+      comando = 0;
+      break;
+      default:
+      digitalWrite(13, HIGH);
+      characteristicTX5->setValue("pode comecar");
+      characteristicTX5->notify();
+      delay(6000);
+      digitalWrite(13, LOW);
+      delay(6000);
+      break;
+    } 
     delay(100);
   }
 }
