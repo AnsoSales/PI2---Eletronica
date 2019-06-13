@@ -168,17 +168,14 @@ void setup()
     // Inicia o advertisement (descoberta do ESP32)
     server->getAdvertising()->start();
  
- 
-  Serial.printf("\nsetup() em core: %d", xPortGetCoreID());//Mostra no monitor em qual core o setup() foi chamado
   xTaskCreatePinnedToCore(loop2, "loop2", 8192, NULL, 1, NULL, 0);//Cria a tarefa "loop2()" com prioridade 1, atribuída ao core 0
-  delay(1);
+  delay(1); //delayzinho só pra não acionar o watchdog timer
 }
  
 void loop()//O loop() sempre será atribuído ao core 1 automaticamente pelo sistema, com prioridade 1
 {
     // coloque aqui os códigos para mandar os níveis dos reservatórios e da temperatura do tanque para o aplicativo. 
-     //Lembre-se de transformar tudo para string antes de mandar
-  Serial.printf("\n Tempo corrido: %d");
+    //Lembre-se de transformar tudo para string antes de mandar
   sonico(trigger,echo1);
   dist1= (tempo/29/2)-1;
   delay(70);
@@ -209,40 +206,32 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
 {
     characteristicTX5->setValue("pode comecar");
     characteristicTX5->notify();
-       //aqui é onde se inicia 
+     //aqui é onde se iniciam os processos da máquina. Em cada case terá uma dosagem diferente a depender da receita.
+     //Por segurança eu sempre zero a variável "comando" para a máquina não ter que fazer a receita de novo. recomendo deixar um delay
+     //depois de zerar esta variável. Sempre informar também por meio da característica TX5 as etapas da lavagem. No rela tem essas etapas.
     switch (comando)
     {
-      case 1:
-      digitalWrite(13, HIGH);
-      characteristicTX5->setValue("limpeza");
-      characteristicTX5->notify();
-      delay(2000);
-      digitalWrite(13, LOW);
-      characteristicTX5->setValue("limpeza Concluida");
-      characteristicTX5->notify();
+      case 1://receita 1 sem essência
+    
       comando = 0;
-      delay(2000);
+     
       break;
-      case 2:
-      digitalWrite(13, HIGH);
-      characteristicTX5->setValue("4");
-      characteristicTX5->notify();
-      delay(2000);
-      characteristicTX5->setValue("3");
-      characteristicTX5->notify();
-      delay(2000);
-      characteristicTX5->setValue("2");
-      characteristicTX5->notify();
-      delay(2000);
-      characteristicTX5->setValue("1");
-      characteristicTX5->notify();
-      delay(2000);
-      characteristicTX5->setValue("FIM");
-      characteristicTX5->notify();
-      delay(2000);
-      digitalWrite(13, LOW);
+      case 2://receita 2 sem essência
+    
       comando = 0;
       break;
+      
+      case 3://receita 3 sem essência
+    
+      comando = 0;
+      break;
+      
+      case 4://receita 1 com a essencia 1
+    
+      comando = 0;
+              
+      break;
+              
       default:
       digitalWrite(13, HIGH);
       characteristicTX5->setValue("pode comecar");
