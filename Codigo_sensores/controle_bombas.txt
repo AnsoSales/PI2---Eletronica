@@ -1,0 +1,74 @@
+
+int buttonState = 0;         
+
+void setup() 
+{
+  Serial.begin(115200);
+  bomba1_setup();
+  
+}
+
+void bomba1_setup()
+{
+  gpio_set_direction(GPIO_NUM_18, GPIO_MODE_OUTPUT);      //definindo motor como saida
+  gpio_set_pull_mode(GPIO_NUM_18, GPIO_PULLDOWN_ONLY);   //definindo resistor de pulldown no motor
+
+  gpio_set_direction(GPIO_NUM_19, GPIO_MODE_INPUT);     //entrada de controle do motor
+
+}
+void bomba2_setup()
+{
+  gpio_set_direction(GPIO_NUM_18, GPIO_MODE_OUTPUT);      //definindo motor como saida
+  gpio_set_pull_mode(GPIO_NUM_18, GPIO_PULLDOWN_ONLY);   //definindo resistor de pulldown no motor
+
+  gpio_set_direction(GPIO_NUM_19, GPIO_MODE_INPUT);     //entrada de controle do motor
+
+}
+
+void bomba3_setup()
+{
+  gpio_set_direction(GPIO_NUM_18, GPIO_MODE_OUTPUT);      //definindo motor como saida
+  gpio_set_pull_mode(GPIO_NUM_18, GPIO_PULLDOWN_ONLY);   //definindo resistor de pulldown no motor
+
+  gpio_set_direction(GPIO_NUM_19, GPIO_MODE_INPUT);     //entrada de controle do motor
+
+}
+
+void bomba4_setup()
+{
+  gpio_set_direction(GPIO_NUM_18, GPIO_MODE_OUTPUT);      //definindo motor como saida
+  gpio_set_pull_mode(GPIO_NUM_18, GPIO_PULLDOWN_ONLY);   //definindo resistor de pulldown no motor
+
+  gpio_set_direction(GPIO_NUM_19, GPIO_MODE_INPUT);     //entrada de controle do motor
+
+}
+
+void bomba5_setup()
+{
+  gpio_set_direction(GPIO_NUM_18, GPIO_MODE_OUTPUT);      //definindo motor como saida
+  gpio_set_pull_mode(GPIO_NUM_18, GPIO_PULLDOWN_ONLY);   //definindo resistor de pulldown no motor
+
+  gpio_set_direction(GPIO_NUM_19, GPIO_MODE_INPUT);     //entrada de controle do motor
+
+}
+
+
+
+
+
+void controle_bomba1()
+{
+  buttonState = digitalRead(GPIO_NUM_19);
+  if (buttonState == HIGH) {
+          digitalWrite(GPIO_NUM_18, HIGH);
+          delay(15000);
+      } else {
+          digitalWrite(GPIO_NUM_18, LOW);
+      } 
+  
+}
+
+void loop() {
+  controle_bomba1();
+
+}
