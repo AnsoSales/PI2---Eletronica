@@ -12,9 +12,30 @@ int comando = 0;
 //unsigned long previousMicros, timeout = 20000UL;
 //unsigned int F, B, H;
 //float Q[]={1e-5}, R[1] = {2.92e-3};
-#define trigger GPIO_NUM_26
-#define echo1 GPIO_NUM_39
-#define echo2 GPIO_NUM_34
+#define echo1 GPIO_NUM_36 //primeiro echo
+#define echo2 GPIO_NUM_39 //segundo echo
+#define echo3 GPIO_NUM_34 //terceiro echo
+#define echo4 GPIO_NUM_35 //quarto echo
+#define fluxo1 GPIO_NUM_32 //sensor de fluxo 1
+#define fluxo2 GPIO_NUM_33 //sensor de fluxo 2
+#define fluxo3 GPIO_NUM_25 //sensor de fluxo 3
+#define lmdata GPIO_NUM_26 //sensor de temperatura 
+#define dout GPIO_NUM_27  //balanca
+#define clk GPIO_NUM_14 //balanca
+#define phdata GPIO_NUM_12  //sensor de ph
+#define bomba1 GPIO_NUM_23
+#define bomba2 GPIO_NUM_22
+#define bomba3 GPIO_NUM_21
+#define bomba4 GPIO_NUM_19
+#define bomba5 GPIO_NUM_18
+#define bomba6 GPIO_NUM_5
+#define bomba7 GPIO_NUM_4
+#define valvula1 GPIO_NUM_0
+#define valvula2 GPIO_NUM_2
+#define motor GPIO_NUM_15
+#define tx GPIO_NUM_17
+#define rx GPIO_NUM_16
+
 
 
 #define Alcool  "2aaa9a64-6c81-4718-95eb-92fcdc1f95c8"
