@@ -38,31 +38,31 @@ void rotina_soda_agua()
   while(1)
   {
     peso_soda=balanca.get_units(); 
-    if ((peso_soda>massa_soda) and (controle=0))
+    if ((peso_soda>massa_soda) && (controle==0))
       {  
         digitalWrite(valvula1,HIGH);
         controle=1; 
       }
-    else if((peso_soda>y) and (controle=1))
+    else if((peso_soda>y) && (controle==1))
      {
         digitalWrite(valvula1,LOW);
         digitalWrite(bomba1,HIGH);
         controle=2;
      }
-    else if((peso_soda<5) and (controle=2))
+    else if((peso_soda<5) && (controle==2))
      {
         digitalWrite(bomba1,LOW);
         digitalWrite(valvula1,HIGH);
         controle=3;
      } 
-    else if((peso_soda>massa_agua) and (controle=3))
+    else if((peso_soda>massa_agua) && (controle==3))
      {
         digitalWrite(valvula1,LOW);            
         digitalWrite(bomba1,HIGH);
         controle=4;
         
      }
-     else if((peso_soda<5) and (controle=4))
+     else if((peso_soda<5) && (controle==4))
      {  
         digitalWrite(valvula1,LOW);
         digitalWrite(bomba1,LOW);
@@ -77,19 +77,19 @@ void rotina_soda_agua()
            controle=5;
          }
      }
-     else if( (peso_soda>massa_agua) and (controle=5))
+     else if( (peso_soda>massa_agua) && (controle==5))
      {  
            digitalWrite(valvula1,LOW);
            digitalWrite(bomba1,HIGH); 
            controle=6;     
      }
-     else if((peso_soda<5) and (controle=6))
+     else if((peso_soda<5) && (controle==6))
      {
            digitalWrite(valvula1,LOW);
            digitalWrite(bomba1,LOW); 
            controle=7;
      }
-     else if (controle=7)
+     else if (controle==7)
      {
            controle=0;
            break;
