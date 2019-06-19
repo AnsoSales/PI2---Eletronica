@@ -25,6 +25,9 @@ void configura_bomba_solenoide()
     digitalWrite(valvula1, LOW);
     
 
+    gpio_set_direction(motor , GPIO_MODE_OUTPUT);//configura bomba4 p/ BOMBA Da agua quente
+    digitalWrite(motor, LOW);
+
       
 }
 
@@ -62,6 +65,13 @@ void rotina_agua_quente()
     digitalWrite(bomba6, HIGH);
     delay(tempo_alcool);             //tempo em milisegundos necessario para escoar o volume definido
     digitalWrite(bomba6, LOW); 
+}
+
+void rotina_motor()
+{
+    digitalWrite(motor, HIGH);
+    delay(tempo_alcool);             //tempo em milisegundos necessario para escoar o volume definido
+    digitalWrite(motor, LOW); 
 }
 
 
