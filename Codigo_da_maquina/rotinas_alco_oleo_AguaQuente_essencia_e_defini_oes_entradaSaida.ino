@@ -25,7 +25,7 @@ void configura_bomba_solenoide()
     digitalWrite(valvula2, LOW);
     
 
-    gpio_set_direction(motor , GPIO_MODE_OUTPUT);//configura bomba4 p/ BOMBA Da agua quente
+    gpio_set_direction(motor , GPIO_MODE_OUTPUT);//configura saida para ligar motor
     digitalWrite(motor, LOW);
 
       
