@@ -3,9 +3,10 @@
 #include <BLEUtils.h>
 #include <BLEServer.h>
 #include <BLE2902.h>
+#include "HardwareSerial.h"
 
 BLECharacteristic *characteristicTX0, *characteristicTX1, *characteristicTX2, *characteristicTX3,*characteristicTX4, *characteristicTX5, *characteristicTX6;
-
+HardwareSerial MySerial(1);
 bool deviceConnected = false;
 float tempo,volume,dist1,dist2,media1,media2,altura,raio = 0.0;
 int comando = 0;
@@ -21,7 +22,8 @@ int comando = 0;
 #define dout GPIO_NUM_27  //balanca
 #define clk GPIO_NUM_14 //balanca
 #define phdata GPIO_NUM_12  //sensor de ph
-#define bomba1 GPIO_NUM_23
+#define trigger GPIO_NUM_13 //trigger
+#define bomba1 GPIO_NUM_23 
 #define bomba2 GPIO_NUM_22
 #define bomba3 GPIO_NUM_21
 #define bomba4 GPIO_NUM_19
@@ -120,10 +122,12 @@ class ServerCallbacks: public BLEServerCallbacks {
     }
 };
 
-void ultrassonico(gpio_num_t A, gpio_num_t B)
+void ultrassonico(gpio_num_t A, gpio_num_t B, gpio_num_t C, gpio_num_t D)
 {
   gpio_set_direction(A, GPIO_MODE_OUTPUT);
   gpio_set_direction(B, GPIO_MODE_INPUT);
+  gpio_set_direction(C, GPIO_MODE_INPUT);
+  gpio_set_direction(D, GPIO_MODE_INPUT);
 }
 void sonico(gpio_num_t A, gpio_num_t B)
 {  
@@ -136,11 +140,11 @@ void sonico(gpio_num_t A, gpio_num_t B)
 }
 void setup()
 {
-  Serial.begin(115200);//Inicia a comunicaçao serial
-  pinMode(13, OUTPUT);//Define o led Onboard como saída
-  ultrassonico(trigger,echo1);
+  MySerial.begin(115200, SERIAL_8N1, rx, tx);
+  MySerial.write(1);
+  ultrassonico(trigger,echo1,echo2,echo3,echo4);
   delay(10);
-  ultrassonico(trigger,echo2);
+
   BLEDevice::init("Maquina de Sabao");//Da nome ao servidor bluetooth
 
   BLEServer *server = BLEDevice::createServer();//Cria o servidor Bluetooth
