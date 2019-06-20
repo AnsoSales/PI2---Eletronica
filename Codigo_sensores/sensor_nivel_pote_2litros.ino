@@ -7,7 +7,7 @@ const float VelSon = 34000.0;
 
 const float Ainf=136.89,Asup=338.56; //ate 0.5L 72.25
  
-// Número de muestras
+// NÃºmero de muestras
 const int numLecturas = 100;
  
 float lecturas[numLecturas],h=0,volume=0; // Array para almacenar lecturas
@@ -33,25 +33,25 @@ void setup()
 }
 void loop()
 {
-  // Eliminamos la última medida
+  // Eliminamos la Ãºltima medida
   total = total - lecturas[lecturaActual];
  
   iniciarTrigger();
  
-  // La función pulseIn obtiene el tiempo que tarda en cambiar entre estados, en este caso a HIGH
+  // La funciÃ³n pulseIn obtiene el tiempo que tarda en cambiar entre estados, en este caso a HIGH
   unsigned long tiempo = pulseIn(PinEcho, HIGH);
  
-  // Obtenemos la distancia en cm, hay que convertir el tiempo en segudos ya que está en microsegundos
+  // Obtenemos la distancia en cm, hay que convertir el tiempo en segudos ya que estÃ¡ en microsegundos
   // por eso se multiplica por 0.000001
   float distancia = tiempo * 0.000001 * VelSon / 2.0;
  
   // Almacenamos la distancia en el array
   lecturas[lecturaActual] = distancia;
  
-  // Añadimos la lectura al total
+  // AÃ±adimos la lectura al total
   total = total + lecturas[lecturaActual];
  
-  // Avanzamos a la siguiente posición del array
+  // Avanzamos a la siguiente posiciÃ³n del array
   lecturaActual = lecturaActual + 1;
  
   // Comprobamos si hemos llegado al final del array
@@ -79,7 +79,7 @@ void loop()
   delay(500);
 }
  
-// Método que inicia la secuencia del Trigger para comenzar a medir
+// MÃ©todo que inicia la secuencia del Trigger para comenzar a medir
 void iniciarTrigger()
 {
   // Ponemos el Triiger en estado bajo y esperamos 2 ms
