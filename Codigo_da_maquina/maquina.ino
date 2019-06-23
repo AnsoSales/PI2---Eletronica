@@ -4,6 +4,7 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 #include "HardwareSerial.h"
+#include "HX711.h"
 
 BLECharacteristic *characteristicTX0, *characteristicTX1, *characteristicTX2, *characteristicTX3, *characteristicTX4, *characteristicTX5, *characteristicTX6;
 HardwareSerial MySerial(1);
@@ -17,6 +18,10 @@ const float Ainf=36,Asup=70; //ate 0.5L 72.25
 int leituraAtual = 0;
 float total = 0;
 
+//variaveis das quantidades de ingredientes
+float vol_oleo=0,vol_etanol=0,massa_soda=0,agua_soda=0,vol_agua=0,agua_quente=0,vol_essencia1=0,vol_essencia2=0;
+
+
 #define echo1 GPIO_NUM_36 //primeiro echo
 #define echo2 GPIO_NUM_39 //segundo echo
 #define echo3 GPIO_NUM_34 //terceiro echo
@@ -24,21 +29,25 @@ float total = 0;
 #define lmdata GPIO_NUM_32 //sensor de temperatura
 #define phdata GPIO_NUM_33 //sensor de ph
 #define fluxo1 GPIO_NUM_25 //sensor de fluxo 1
-#define fluxo2 GPIO_NUM_26 //sensor de fluxo 2
-#define dout GPIO_NUM_27  //balanca
-#define clk GPIO_NUM_14 //balanca
+#define motor GPIO_NUM_26 //sensor de fluxo 2
+
+//defines da balança
+#define DOUT GPIO_NUM_27  //balanca
+#define CLK GPIO_NUM_14 //balanca
+#define bomba1 GPIO_NUM_23
+#define valvula1 GPIO_NUM_0
+
+
 #define fluxo3 GPIO_NUM_12  //sensor de fluxo 3
 #define trigger GPIO_NUM_13 //trigger
-#define bomba1 GPIO_NUM_23
 #define bomba2 GPIO_NUM_22
 #define bomba3 GPIO_NUM_21
 #define bomba4 GPIO_NUM_19
 #define bomba5 GPIO_NUM_18
 #define bomba6 GPIO_NUM_5
 #define bomba7 GPIO_NUM_4
-#define valvula1 GPIO_NUM_0
 #define valvula2 GPIO_NUM_2
-#define motor GPIO_NUM_15
+//#define motor GPIO_NUM_15
 #define tx GPIO_NUM_17
 #define rx GPIO_NUM_16
 
@@ -65,6 +74,216 @@ float total = 0;
 
 
 
+void configura_bomba_solenoide()
+{
+    gpio_set_direction(bomba1  , GPIO_MODE_OUTPUT);//configura bomba1 p/ BOMBA Da balança
+    digitalWrite(bomba1, LOW);
+    gpio_set_direction(bomba2  , GPIO_MODE_OUTPUT);//configura bomba2 p/ BOMBA Do oleo 
+    digitalWrite(bomba2, LOW);
+    gpio_set_direction(bomba3 , GPIO_MODE_OUTPUT);//configura bomba3 p/ BOMBA Do alcool
+    digitalWrite(bomba3, LOW);
+    gpio_set_direction(bomba4 , GPIO_MODE_OUTPUT);//configura bomba4 p/ BOMBA Da essencia1
+    digitalWrite(bomba4, LOW);
+    gpio_set_direction(bomba5 , GPIO_MODE_OUTPUT);//configura bomba4 p/ BOMBA Da essencia2
+    digitalWrite(bomba5, LOW);
+    gpio_set_direction(bomba6 , GPIO_MODE_OUTPUT);//configura bomba4 p/ BOMBA Da agua quente
+    digitalWrite(bomba6, LOW);
+
+    gpio_set_direction(valvula1 , GPIO_MODE_OUTPUT);//configura valvula p/  VALVULA Da balança
+    digitalWrite(valvula1, LOW);
+    gpio_set_direction(valvula2 , GPIO_MODE_OUTPUT);//configura valvula p/  VALVULA Da agua quente
+    digitalWrite(valvula2, LOW);
+    
+
+    gpio_set_direction(motor , GPIO_MODE_OUTPUT);//configura saida para ligar motor
+    digitalWrite(motor, LOW);
+
+      
+}
+
+void rotina_oleo()
+{
+    characteristicTX5->setValue("2");
+    characteristicTX5->notify();
+
+    digitalWrite(bomba2, HIGH);
+    delay(vol_oleo);             //tempo em milisegundos necessario para escoar o volume definido
+    digitalWrite(bomba2, LOW); 
+  
+}
+
+void rotina_alcool()
+{   
+    characteristicTX5->setValue("3");
+    characteristicTX5->notify();
+    digitalWrite(bomba3, HIGH);
+    delay(vol_etanol);             //tempo em milisegundos necessario para escoar o volume definido
+    digitalWrite(bomba3, LOW); 
+}
+
+void rotina_agua_quente()
+{
+    characteristicTX5->setValue("4");
+    characteristicTX5->notify();
+    digitalWrite(bomba6, HIGH);
+    delay(4000);             //tempo em milisegundos necessario para escoar o volume definido
+    digitalWrite(bomba6, LOW); 
+}
+
+
+
+void rotina_essencia_1()
+{
+
+  
+    characteristicTX5->setValue("10");
+    characteristicTX5->notify();
+    digitalWrite(bomba4, HIGH);
+    delay(vol_essencia1);             //tempo em milisegundos necessario para escoar o volume definido
+    digitalWrite(bomba4, LOW); 
+}
+
+void rotina_essencia_2()
+{
+    
+    characteristicTX5->setValue("10");
+    characteristicTX5->notify();
+    digitalWrite(bomba5, HIGH);
+    delay(vol_essencia2);             //tempo em milisegundos necessario para escoar o volume definido
+    digitalWrite(bomba5, LOW); 
+}
+
+
+
+void rotina_motor()
+{
+    characteristicTX5->setValue("5");
+    characteristicTX5->notify();
+    digitalWrite(motor, HIGH);
+    delay(10000);             //tempo em milisegundos necessario para escoar o volume definido
+    digitalWrite(motor, LOW); 
+}
+
+void finale()
+{
+
+    characteristicTX5->setValue("FIM PH");
+    characteristicTX5->notify();
+    delay(5000);
+}
+
+
+HX711 balanca;
+float calibration_factor = 984130;
+void inicia_balanca()
+{
+    balanca.begin(DOUT, CLK);                          // inicializa a balança
+    balanca.set_scale(calibration_factor);   // ajusta fator de calibração
+    balanca.tare();   // zera a Balança  
+    
+}
+
+void rotina_soda_agua()
+{
+  characteristicTX5->setValue("1");
+  characteristicTX5->notify();
+  delay(100);
+  int controle=0;
+  char txString[8];
+  float peso_soda=0, y=0, massa_agua=0;
+  y=massa_soda+agua_soda; //agua_sooda em mL
+  massa_agua=vol_agua;
+  if (vol_agua>1000)
+  {
+      massa_agua=(vol_agua*1000)/2;
+  }
+  
+  
+  while(1)
+  {
+
+    
+    peso_soda=balanca.get_units();
+
+    if (controle==0){
+      
+    dtostrf(peso_soda, 2, 2, txString);
+    characteristicTX6->setValue("txString");
+    characteristicTX6->notify();
+     }
+    
+    Serial.println(balanca.get_units(), 3); 
+    
+    if ((peso_soda>=massa_soda) && (controle==0))
+      {  
+        digitalWrite(valvula1,HIGH);
+        Serial.print("meupau");
+        controle=10; 
+      }
+    else if((peso_soda>=y)&&((controle==10)))
+     {
+        digitalWrite(valvula1,LOW);
+        digitalWrite(bomba1,HIGH);
+        Serial.print("pirutorto");
+        controle=20;
+       
+     }
+   
+   
+   else if((peso_soda<=0.005) &&(controle==20))
+     {
+        digitalWrite(bomba1,LOW);
+        digitalWrite(valvula1,HIGH);
+        controle=30;
+        Serial.print("papaco");
+     } 
+    if((peso_soda>=massa_agua) && (controle==30))
+     {
+        digitalWrite(valvula1,LOW);            
+        digitalWrite(bomba1,HIGH);
+        controle=40;
+        
+     }
+    if((peso_soda<=0.005) && (controle==40))
+     {  
+        digitalWrite(valvula1,LOW);
+        digitalWrite(bomba1,LOW);
+        if(vol_agua<=1)
+        {
+        controle=70;
+        }
+        else if(vol_agua>=1)
+        {
+           digitalWrite(valvula1,HIGH);
+           digitalWrite(bomba1,LOW); 
+           controle=50;
+        }
+     }
+    if( (peso_soda>=massa_agua) && (controle==50))
+     {  
+           digitalWrite(valvula1,LOW);
+           digitalWrite(bomba1,HIGH); 
+           controle=60;     
+     }
+     if((peso_soda<=0.005) && (controle==60))
+     {
+           digitalWrite(valvula1,LOW);
+           digitalWrite(bomba1,LOW); 
+           controle=70;
+     }
+     if (controle==70)
+     {
+           controle=0;
+           break;
+     }
+   delay(500);  
+   }   
+  
+}
+
+
+
+
 class CharacteristicCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *characteristic) {
       //retorna ponteiro para o registrador contendo o valor atual da caracteristica
@@ -75,38 +294,38 @@ class CharacteristicCallbacks: public BLECharacteristicCallbacks {
           //Serial.print(rxValue[i]);
         }
         // Serial.println();
-        if (rxValue.find("receita1-") != -1)
+        if (rxValue.find("receita10") != -1)
         {
           comando = 1;
         }
-        else if (rxValue.find("receita2-") != -1)
+        else if (rxValue.find("receita20") != -1)
         {
           comando = 2;
         }
-        else if (rxValue.find("receita3-") != -1)
+        else if (rxValue.find("receita30") != -1)
         {
           comando = 3;
         }
-        else if (rxValue.find("receita1-0") != -1)
+        else if (rxValue.find("receita11") != -1)
         {
           comando = 4;
         }
-        else if (rxValue.find("receita2-0") != -1)
+        else if (rxValue.find("receita21") != -1)
         {
           comando = 5;
         }
-        else if (rxValue.find("receita3-0") != -1)
+        else if (rxValue.find("receita31") != -1)
         {
           comando = 6;
         }
-        else if (rxValue.find("receita1-1") != -1)
+        else if (rxValue.find("receita12") != -1)
         {
           comando = 7;
         }
-        else if (rxValue.find("receita2-1") != -1) {
+        else if (rxValue.find("receita22") != -1) {
           comando = 8;
         }
-        else if (rxValue.find("receita3-1") != -1) {
+        else if (rxValue.find("receita32") != -1) {
           comando = 9;
         }
         else if (rxValue.find("limpeza") != -1) {
@@ -258,6 +477,13 @@ void setup()
   // Inicia o advertisement (descoberta do ESP32)
   server->getAdvertising()->start();
 
+//inicia_sensores_solenoides_bombas
+
+  inicia_balanca(); //iniciando a balança
+  configura_bomba_solenoide();
+
+
+
   xTaskCreatePinnedToCore(loop2, "loop2", 8192, NULL, 2, NULL, 1);//Cria a tarefa "loop2()" com prioridade 1, atribuída ao core 0
   delay(1); //delayzinho só pra não acionar o watchdog timer
 }
@@ -317,59 +543,167 @@ volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
 
 void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
 {
-  //characteristicTX5->setValue("pode comecar");
-  //characteristicTX5->notify();
+  
   //aqui é onde se iniciam os processos da máquina. Em cada case terá uma dosagem diferente a depender da receita.
   //Por segurança eu sempre zero a variável "comando" para a máquina não ter que fazer a receita de novo. recomendo deixar um delay
   //depois de zerar esta variável. Sempre informar também por meio da característica TX5 as etapas da lavagem. No rela tem essas etapas.
-  while (1){
-  switch (comando)
+  while (1)
   {
-    case 1://receita 1 sem essência
-      characteristicTX5->setValue("1");
-      characteristicTX5->notify();
-      delay(1000);
-      characteristicTX5->setValue("2");
-      characteristicTX5->notify();
-       delay(1000);
-      characteristicTX5->setValue("3");
-      characteristicTX5->notify();
-       delay(1000);
-      characteristicTX5->setValue("4");
-      characteristicTX5->notify();
-       delay(1000);
-      characteristicTX5->setValue("5");
-      characteristicTX5->notify();
-       delay(1000);
-      comando = 0;
   
-      break;
-    case 2://receita 2 sem essência
-      characteristicTX5->setValue("receita 2");
-      characteristicTX5->notify();
-      comando = 0;
-      break;
+    while(comando==0)
+    {
+      
+    characteristicTX5->setValue("pode comecar");
+    characteristicTX5->notify(); 
 
-    case 3://receita 3 sem essência
-      characteristicTX5->setValue("receita 3");
-      characteristicTX5->notify();
-      comando = 0;
-      break;
+      vol_oleo=0;       // fazer tempo na bomba
+      vol_etanol=0;   // fazer tempo na bomba
+      massa_soda=0;   // massa da soda em kg
+      agua_soda=0;     // Em litros(SENSOR DE BALANÇA)    
+      vol_agua=0;       // Em litros(SENSOR DE BALANÇA)
+      agua_quente=0;    // Em litros(SENSOR DE FLUXA)
+      vol_essencia1=0;    // Em mL (TEMPO NECESSARIO-CALCULAR)
+      vol_essencia2=0;    // Em mL(TEMPO NECESSARIO-CALCULAR)
+   
+    }
+   delay(100);
+   switch (comando)
+    {
+      case 1://receita 1 sem essência
+          vol_oleo=2000;       // fazer tempo na bomba
+          vol_etanol=4000;   // fazer tempo na bomba
+          massa_soda=0.150;   // massa da soda em kg
+          agua_soda=0.400;     // Em litros(SENSOR DE BALANÇA)    
+          vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
+          agua_quente=1000;    // Em litros(SENSOR DE FLUXA)
+          vol_essencia1=0;    // Em mL (TEMPO NECESSARIO-CALCULAR)
+          vol_essencia2=0;     // Em mL(TEMPO NECESSARIO-CALCULAR)
+          comando = 0;      
+          break;
+      case 2://receita 2 sem essência
+         characteristicTX5->setValue("1");
+        characteristicTX5->notify();
+          vol_oleo=0.5;       // fazer tempo na bomba
+          vol_etanol=0.250;   // fazer tempo na bomba
+          massa_soda=0.200;   // massa da soda em kg
+          agua_soda=0.450 ;    // Em litros(SENSOR DE BALANÇA)    
+          vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
+          agua_quente=0.5;    // Em litros(SENSOR DE FLUXA)
+          vol_essencia1=0;    // Em mL (TEMPO NECESSARIO-CALCULAR)
+          vol_essencia2=0 ;    // Em mL(TEMPO NECESSARIO-CALCULAR)
+          comando = 0;      
+       
+        break;
+  
+      case 3://receita 3 sem essência
+          vol_oleo=1;       // fazer tempo na bomba
+          vol_etanol=0.500;   // fazer tempo na bomba
+          massa_soda=250;   // massa da soda em kg
+          agua_soda=0.500;     // Em litros(SENSOR DE BALANÇA)    
+          vol_agua=4.5;       // Em litros(SENSOR DE BALANÇA)
+          agua_quente=1.5;    // Em litros(SENSOR DE FLUXA)
+          vol_essencia1=0;    // Em mL (TEMPO NECESSARIO-CALCULAR)
+          vol_essencia2=0;   // Em mL(TEMPO NECESSARIO-CALCULAR)
+          comando = 0;      
+        break;
+  
+      case 4://receita 1 com a essencia 1
+          vol_oleo=4000;       // fazer tempo na bomba
+          vol_etanol=3000;   // fazer tempo na bomba
+          massa_soda=0.150;   // massa da soda em kg
+          agua_soda=0.400 ;    // Em litros(SENSOR DE BALANÇA)    
+          vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
+          agua_quente=4000;    // Em litros(SENSOR DE FLUXA)
+          vol_essencia1=1000;    // Em mL (TEMPO NECESSARIO-CALCULAR)
+          vol_essencia2=0 ;    // Em mL(TEMPO NECESSARIO-CALCULAR)
+          comando = 0;      
+          break;
+      case 5://receita 2 com a essencia 1
+          vol_oleo=0.25;       // fazer tempo na bomba
+          vol_etanol=0.250;   // fazer tempo na bomba
+          massa_soda=0.150;   // massa da soda em kg
+          agua_soda=0.400;     // Em litros(SENSOR DE BALANÇA)    
+          vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
+          agua_quente=0.5;    // Em litros(SENSOR DE FLUXA)
+          vol_essencia1=20;    // Em mL (TEMPO NECESSARIO-CALCULAR)
+          vol_essencia2=0 ;    // Em mL(TEMPO NECESSARIO-CALCULAR)
+          comando = 0;      
+          break;
+      case 6://receita 3 com a essencia 1
+          characteristicTX5->setValue("1");
+          characteristicTX5->notify();
+          vol_oleo=1;       // fazer tempo na bomba
+          vol_etanol=0.500;   // fazer tempo na bomba
+          massa_soda=250;   // massa da soda em kg
+          agua_soda=0.500;     // Em litros(SENSOR DE BALANÇA)    
+          vol_agua=4.5;       // Em litros(SENSOR DE BALANÇA)
+          agua_quente=1.5;    // Em litros(SENSOR DE FLUXA)
+          vol_essencia1=0;    // Em mL (TEMPO NECESSARIO-CALCULAR)
+          vol_essencia2=0;     // Em mL(TEMPO NECESSARIO-CALCULAR)
+          comando = 0;      
+        break;
 
-    case 4://receita 1 com a essencia 1
-      characteristicTX5->setValue("limpeza");
-      characteristicTX5->notify();
-      comando = 0;
+      case 7://receita 1 com a essencia 2
+          vol_oleo=0.25;       // fazer tempo na bomba
+          vol_etanol=0.250;   // fazer tempo na bomba
+          massa_soda=0.150;   // massa da soda em kg
+          agua_soda=0.400 ;    // Em litros(SENSOR DE BALANÇA)    
+          vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
+          agua_quente=0.5;    // Em litros(SENSOR DE FLUXA)
+          vol_essencia1=20;    // Em mL (TEMPO NECESSARIO-CALCULAR)
+          vol_essencia2=0 ;   // Em mL(TEMPO NECESSARIO-CALCULAR)
+          comando = 0;      
+          break;
+      case 8://receita 2 com a essencia 2
+          vol_oleo=0.25;       // fazer tempo na bomba
+          vol_etanol=0.250;   // fazer tempo na bomba
+          massa_soda=0.150;   // massa da soda em kg
+          agua_soda=0.400;     // Em litros(SENSOR DE BALANÇA)    
+          vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
+          agua_quente=0.5;    // Em litros(SENSOR DE FLUXA)
+          vol_essencia1=20;    // Em mL (TEMPO NECESSARIO-CALCULAR)
+          vol_essencia2=0;     // Em mL(TEMPO NECESSARIO-CALCULAR)
+          comando = 0;      
+          break;
+      case 9://receita 3 com a essencia 2
+          characteristicTX5->setValue("1");
+          characteristicTX5->notify();
+          vol_oleo=1;       // fazer tempo na bomba
+          vol_etanol=0.500;   // fazer tempo na bomba
+          massa_soda=250;   // massa da soda em kg
+          agua_soda=0.500;     // Em litros(SENSOR DE BALANÇA)    
+          vol_agua=4.5;       // Em litros(SENSOR DE BALANÇA)
+          agua_quente=1.5;    // Em litros(SENSOR DE FLUXA)
+          vol_essencia1=0;    // Em mL (TEMPO NECESSARIO-CALCULAR)
+          vol_essencia2=0;    // Em mL(TEMPO NECESSARIO-CALCULAR)
+          comando = 0;      
+        break;       
+        default:
+          comando = 0;
+        break;
+    
+    }
+    //aqui inicia a maquina após selecionar os ingredientes;
+    // rotina_soda_agua();  //rotina para dosar a quantidade de agua, soda.
+    rotina_oleo(); 
+    rotina_alcool();
+    rotina_essencia_1();
+      //if(vol_essencia1>0)
+      //{
+           rotina_essencia_1();
+      //}
+      //else if(vol_essencia2>0)
+      //{
+     //     rotina_essencia_2();  
+      //}
+      rotina_agua_quente();
+      rotina_motor(); 
+     
+      finale();
+      comando=0;
+      delay(100);
 
-      break;
-
-    default:
-      digitalWrite(13, HIGH);
-      characteristicTX5->setValue("pode comecar");
-      characteristicTX5->notify();
-      digitalWrite(13, LOW);
-      break;
-  }
-  delay(100);
 }
+
+
 }
