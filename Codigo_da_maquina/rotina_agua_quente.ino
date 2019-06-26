@@ -38,7 +38,23 @@ void enche_recipiente()
   delay(tempo - 3500); //descontando tempo de calibração
   digitalWrite(valvula2, LOW);
 }
+void temp_arduino
+{
+        while (MySerial.available() > 0) {
+        int byteFromSerial = MySerial.read();
+        // Do something
+        if(byteFromSerial == 1)
+        {
+           MySerial.write(1);
+           digitalWrite(bomba3, LOW);
+         }
+         else
+         {
+            MySerial.write(0); 
+            digitalWrite(bomba3, HIGH);
+        }
 
+}
 
 float calibra()
 {
