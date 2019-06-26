@@ -1,5 +1,6 @@
 // definir porta de leitura do sensor de Vazao
 const int portaVazao = GPIO_NUM_35;
+const int bomba3 = GPIO_NUM_21;
 static void atualizaVazao();
 volatile int pulsos_vazao = 0;
 float vazao = 0, media = 0, x_litros = 1, tempo = 0;
@@ -38,7 +39,7 @@ void enche_recipiente()
   delay(tempo - 3500); //descontando tempo de calibração
   digitalWrite(valvula2, LOW);
 }
-void temp_arduino
+void temp_arduino()
 {
         while (MySerial.available() > 0) {
         int byteFromSerial = MySerial.read();
