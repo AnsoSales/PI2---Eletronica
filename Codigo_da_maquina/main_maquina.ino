@@ -19,8 +19,8 @@ const int numLeituras = 20;
 bool deviceConnected = false;
 const float Rinf=5.6,Rsup=6.8; //ate 0.5L
 const float Rinf2=7.25,Rsup2=7.8;
-float tempo, volume1,volume2,volume3,volume4, dist1, dist2, media1, media2,media3,media4,h=0,dist,media = 0,leituras[numLeituras], altura, raio, Voltage=0,tempC=0.0, media7 = 0.0;
-int comando, temp_digital = 0;
+float tempo, volume1,volume2,volume3,volume4, dist1, dist2, media1, media2,media3,media4,h=0,dist,media = 0,leituras[numLeituras], altura, raio, Voltage=0,tempC=0.0,ph=0.0, media7 = 0.0;
+int comando, temp_digital=0, ph_digital = 0;
 const float Ainf=36,Asup=70; //ate 0.5L 72.25
 int leituraAtual = 0;
 float total = 0;
@@ -134,12 +134,6 @@ float calibra()
   return media_a;
 }
 
-
-
-
-
-
-
 void configura_bomba_solenoide()
 {
     gpio_set_direction(bomba1  , GPIO_MODE_OUTPUT);//configura bomba1 p/ BOMBA Da balança
@@ -183,7 +177,7 @@ int temp_arduino()
         }
   return(byteFromSerial = 4)?0:1;
 }
-
+}
 void rotina_oleo()
 {
     characteristicTX5->setValue("2");
@@ -368,71 +362,6 @@ void rotina_soda_agua()
   
 }
 
-
-
-
-class CharacteristicCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *characteristic) {
-      //retorna ponteiro para o registrador contendo o valor atual da caracteristica
-      std::string rxValue = characteristic->getValue();
-      //verifica se existe dados (tamanho maior que zero)
-       if (rxValue.length() > 0) {
-        for (int i = 0; i < rxValue.length(); i++) {
-          //Serial.print(rxValue[i]);
-        }
-        // Serial.println();
-        if (rxValue.find("receita10") != -1)
-        {
-          comando = 1;
-        }
-        else if (rxValue.find("receita20") != -1)
-        {
-          comando = 2;
-        }
-        else if (rxValue.find("receita30") != -1)
-        {
-          comando = 3;
-        }
-        else if (rxValue.find("receita11") != -1)
-        {
-          comando = 4;
-        }
-        else if (rxValue.find("receita21") != -1)
-        {
-          comando = 5;
-        }
-        else if (rxValue.find("receita31") != -1)
-        {
-          comando = 6;
-        }
-        else if (rxValue.find("receita12") != -1)
-        {
-          comando = 7;
-        }
-        else if (rxValue.find("receita22") != -1) {
-          comando = 8;
-        }
-        else if (rxValue.find("receita32") != -1) {
-          comando = 9;
-        }
-        else if (rxValue.find("limpeza") != -1) {
-          comando = 10;
-        }
-      }
-    }
-};
-
-//callback para receber os eventos de conexão de dispositivos
-class ServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-    };
-
-    void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-    }
-};
-
 void ultrassonico(gpio_num_t A, gpio_num_t B, gpio_num_t C, gpio_num_t D, gpio_num_t E)
 {
   gpio_set_direction(A, GPIO_MODE_OUTPUT);
@@ -513,6 +442,69 @@ void nivel_essencias(gpio_num_t A, gpio_num_t B)
 
 volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
 }
+
+
+class CharacteristicCallbacks: public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *characteristic) {
+      //retorna ponteiro para o registrador contendo o valor atual da caracteristica
+      std::string rxValue = characteristic->getValue();
+      //verifica se existe dados (tamanho maior que zero)
+       if (rxValue.length() > 0) {
+        for (int i = 0; i < rxValue.length(); i++) {
+          //Serial.print(rxValue[i]);
+        }
+        // Serial.println();
+        if (rxValue.find("receita10") != -1)
+        {
+          comando = 1;
+        }
+        else if (rxValue.find("receita20") != -1)
+        {
+          comando = 2;
+        }
+        else if (rxValue.find("receita30") != -1)
+        {
+          comando = 3;
+        }
+        else if (rxValue.find("receita11") != -1)
+        {
+          comando = 4;
+        }
+        else if (rxValue.find("receita21") != -1)
+        {
+          comando = 5;
+        }
+        else if (rxValue.find("receita31") != -1)
+        {
+          comando = 6;
+        }
+        else if (rxValue.find("receita12") != -1)
+        {
+          comando = 7;
+        }
+        else if (rxValue.find("receita22") != -1) {
+          comando = 8;
+        }
+        else if (rxValue.find("receita32") != -1) {
+          comando = 9;
+        }
+        else if (rxValue.find("limpeza") != -1) {
+          comando = 10;
+        }
+      }
+    }
+};
+
+//callback para receber os eventos de conexão de dispositivos
+class ServerCallbacks: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+      deviceConnected = true;
+    };
+
+    void onDisconnect(BLEServer* pServer) {
+      deviceConnected = false;
+    }
+};
 void setup()
 {
 
