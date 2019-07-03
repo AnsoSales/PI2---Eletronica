@@ -64,7 +64,7 @@ if (Serial.available()>0)
             Serial.write(5);
             
         }
-        delay(1000); 
+ 
 //Pequena pausa de 1 segundo antes da próxima leitura
 }
 }
