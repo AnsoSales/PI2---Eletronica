@@ -393,9 +393,9 @@ void nivel_alcool(gpio_num_t A, gpio_num_t B)
   }
   media1 = total / numLeituras; 
   
-    h=11.1-media;
+    h=11.1-media1;
 
-  if (media>6.95)
+  if (media1>6.95)
      {
       
       volume1= (3.1415926*h*(Rinf*Rinf + Rinf*Rsup + Rsup*Rsup )/3000);
@@ -418,11 +418,11 @@ void nivel_oleo(gpio_num_t A, gpio_num_t B)
   {
     leituraAtual = 0;
   }
-  media = total / numLeituras; 
+  media2 = total / numLeituras; 
   
-    h=7.85-media;
+    h=7.85-media2;
 
-volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
+volume2=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
 }
 void nivel_essencias(gpio_num_t A, gpio_num_t B)
 {
@@ -436,11 +436,11 @@ void nivel_essencias(gpio_num_t A, gpio_num_t B)
   {
     leituraAtual = 0;
   }
-  media = total / numLeituras; 
+  media3 = total / numLeituras; 
   
-    h=7.85-media;
+    h=7.85-media3;
 
-volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
+volume3=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
 }
 
 
@@ -541,8 +541,8 @@ void setup()
   characteristicTX6 ->addDescriptor(new BLE2902());
 
   BLECharacteristic *characteristic0 = service6->createCharacteristic(CHARACTERISTIC_UUID_RX5, BLECharacteristic::PROPERTY_WRITE); 
-                    BLECharacteristic *characteristic2 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX3, BLECharacteristic::PROPERTY_READ);
-
+                    charactristicTX3 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX3, BLECharacteristic::PROPERTY_READ);
+  characteristicTX3 ->addDescriptor(new BLE2902());
   characteristic0->setCallbacks(new CharacteristicCallbacks());//seta a funcao de callback no servico 5.
 
   // Inicia os servicos
@@ -604,12 +604,29 @@ volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
   //}
   // raio = 0.14705882*altura +2.25;
   // volume = (3.141592*(altura)/3)*(raio*raio + raio*2.25 +2.25*2.25);
-  char txString[8], txString2[8];
-
+  char txString1[8], txString2[8],txString3[8],txString4[8];
+  nivel_alcool(trigger,echo3);
+  delay(60);
+  nivel_oleo(trigger,echo4);
+  delay(60);
+  nivel_essencias(trigger,echo1);
+  delay(60);
+  nivel_essencias(trigger,echo2);
+  delay(60);
+  
   //dtostrf(temp_digital, 2, 2, txString);
-  dtostrf(tempC, 2, 2, txString);
+  dtostrf(tempC, 2, 2, txString1);
+   dtostrf(tempC, 2, 2, txString2);
+   dtostrf(tempC, 2, 2, txString3);
+   dtostrf(tempC, 2, 2, txString4);
   characteristicTX0->setValue(txString); //seta o valor que a caracteristica notificará (enviar)
   characteristicTX0->notify();
+  characteristicTX1->setValue(txString); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX1->notify();
+  characteristicTX2->setValue(txString); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX2->notify();
+  characteristicTX3->setValue(txString); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX3->notify();
  
   media7=0;
   //Voltage = 0.0;
