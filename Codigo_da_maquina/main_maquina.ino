@@ -443,6 +443,28 @@ void nivel_essencias(gpio_num_t A, gpio_num_t B)
 volume3=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
 }
 
+void temp_lm()
+{
+for(int i = 0; i<10; i++)
+  {
+    temp_digital = analogRead(lmdata);   //leitura da gpio 35 da esp32
+    media7 += temp_digital/10;
+  }
+    Voltage = (media7 / 2048.0) * 3300;8
+    tempC = Voltage * 0.1; 
+}
+
+void ph_leitura()
+{
+for(int i = 0; i<10; i++)
+  {
+    ph_digital = analogRead(phdata);   //leitura da gpio 35 da esp32
+    media7 += temp_digital/10;
+  }
+    Voltage = (media7 / 4095.0) * 3.300;
+    ph = (Voltage*(-5.7)+21.44); 
+}
+
 
 class CharacteristicCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *characteristic) {
@@ -570,21 +592,21 @@ void loop()//O loop() sempre será atribuído ao core 1 automaticamente pelo sis
 {
   // coloque aqui os códigos para mandar os níveis dos reservatórios e da temperatura do tanque para o aplicativo.
   //Lembre-se de transformar tudo para string antes de mandar
-  total = total - leituras[leituraAtual];
-  sonico(trigger,echo1);
-  dist= tempo*0.034/2;
-  leituras[leituraAtual] = dist;
-  total = total + leituras[leituraAtual];
-  leituraAtual = leituraAtual + 1;
-  if (leituraAtual >= numLeituras)
-  {
-    leituraAtual = 0;
-  }
-  media = total / numLeituras; 
+  //total = total - leituras[leituraAtual];
+  //sonico(trigger,echo1);
+  // dist= tempo*0.034/2;
+   //leituras[leituraAtual] = dist;
+   //total = total + leituras[leituraAtual];
+   //leituraAtual = leituraAtual + 1;
+   //if (leituraAtual >= numLeituras)
+   //{
+  //   leituraAtual = 0;
+ //  }
+  // media = total / numLeituras; 
   
-    h=7.85-media;
+   //  h=7.85-media;
 
-volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
+ //volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
 
    for(int i = 0; i<10; i++)
   {
@@ -604,7 +626,7 @@ volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
   //}
   // raio = 0.14705882*altura +2.25;
   // volume = (3.141592*(altura)/3)*(raio*raio + raio*2.25 +2.25*2.25);
-  char txString1[8], txString2[8],txString3[8],txString4[8];
+  char txString1[8], txString2[8],txString3[8],txString4[8],txString5[8],txString6[8];
   nivel_alcool(trigger,echo3);
   delay(60);
   nivel_oleo(trigger,echo4);
@@ -613,20 +635,29 @@ volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
   delay(60);
   nivel_essencias(trigger,echo2);
   delay(60);
+  temp_lm();
+  delay(10);
+  ph_leitura();
+  delay(10);
   
   //dtostrf(temp_digital, 2, 2, txString);
-  dtostrf(tempC, 2, 2, txString1);
-   dtostrf(tempC, 2, 2, txString2);
-   dtostrf(tempC, 2, 2, txString3);
-   dtostrf(tempC, 2, 2, txString4);
-  characteristicTX0->setValue(txString); //seta o valor que a caracteristica notificará (enviar)
+  dtostrf(volume1, 2, 2, txString1);
+  dtostrf(volume2, 2, 2, txString2);
+  dtostrf(volume3, 2, 2, txString3);
+  dtostrf(volume4, 2, 2, txString4);
+  dtostrf(tempC, 2, 2, txString5);
+  characteristicTX0->setValue(txString1); //seta o valor que a caracteristica notificará (enviar)
   characteristicTX0->notify();
-  characteristicTX1->setValue(txString); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX1->setValue(txString2); //seta o valor que a caracteristica notificará (enviar)
   characteristicTX1->notify();
-  characteristicTX2->setValue(txString); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX2->setValue(txString3); //seta o valor que a caracteristica notificará (enviar)
   characteristicTX2->notify();
-  characteristicTX3->setValue(txString); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX3->setValue(txString4); //seta o valor que a caracteristica notificará (enviar)
   characteristicTX3->notify();
+  characteristicTX4->setValue(txString5); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX4->notify();
+  characteristicTX6->setValue(txString6); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX6->notify();
  
   media7=0;
   //Voltage = 0.0;
