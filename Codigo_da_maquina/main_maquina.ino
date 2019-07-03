@@ -563,7 +563,7 @@ void setup()
   characteristicTX6 ->addDescriptor(new BLE2902());
 
   BLECharacteristic *characteristic0 = service6->createCharacteristic(CHARACTERISTIC_UUID_RX5, BLECharacteristic::PROPERTY_WRITE); 
-                    charactristicTX3 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX3, BLECharacteristic::PROPERTY_READ);
+                    characteristicTX3 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX3, BLECharacteristic::PROPERTY_READ);
   characteristicTX3 ->addDescriptor(new BLE2902());
   characteristic0->setCallbacks(new CharacteristicCallbacks());//seta a funcao de callback no servico 5.
 
