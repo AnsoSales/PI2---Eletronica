@@ -19,7 +19,7 @@ const int numLeituras = 20;
 bool deviceConnected = false;
 const float Rinf=5.6,Rsup=6.8; //ate 0.5L
 const float Rinf2=7.25,Rsup2=7.8;
-float tempo, volume1,volume2,volume3,volume4, dist1, dist2, media1, media2,media3,media4,h=0,dist,media = 0,leituras[numLeituras], altura, raio, Voltage=0,tempC=0.0,ph=0.0, media7 = 0.0;
+float tempo, volume1,volume2,volume3,volume4, dist1, dist2, media1, media2,media3,media4,h=0,dist,media = 0,leituras[numLeituras], altura, raio, Voltage=0,tempC=0.0,ph=0.0, media7 = 0.0,media8=0.0;
 int comando, temp_digital=0, ph_digital = 0;
 const float Ainf=36,Asup=70; //ate 0.5L 72.25
 int leituraAtual = 0;
@@ -476,10 +476,22 @@ void ph_leitura()
 for(int i = 0; i<10; i++)
   {
     ph_digital = analogRead(phdata);   //leitura da gpio 35 da esp32
-    media7 += temp_digital/10;
+    media8 += ph_digital/10;
+  
   }
-    Voltage = (media7 / 4095.0) * 3.300;
-    ph = (Voltage*(-5.7)+21.44); 
+  char txString6[8],phstring[8];
+   for(int j = 0; j<7; j++)
+  { 
+     txString6[j] = "";
+     phstring[j]="";
+  }
+  Voltage = (media8 / 4095.0) * 3.300;
+ 
+    ph = (Voltage*(-5.7)+21.44)/2;
+    dtostrf(ph, 2, 2, txString6);
+  phstring = "FIM " + txString6;
+  characteristicTX5->setValue(txString6); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX5->notify();
 }
 
 
