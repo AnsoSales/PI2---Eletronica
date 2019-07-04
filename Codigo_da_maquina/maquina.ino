@@ -191,8 +191,9 @@ int temp_arduino()
             
         }
         digitalWrite(bomba3, HIGH);  
-  return(byteFromSerial == 4)?0:1;
+  
 }
+  return(byteFromSerial == 4)?0:1;
 }
 void rotina_oleo()
 {
