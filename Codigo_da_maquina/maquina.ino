@@ -8,12 +8,19 @@
 
 BLECharacteristic *characteristicTX0, *characteristicTX1, *characteristicTX2, *characteristicTX3, *characteristicTX4, *characteristicTX5, *characteristicTX6;
 HardwareSerial MySerial(1);
+static void atualizaVazao();
+volatile int pulsos_vazao = 0;
+float vazao = 0, media_a = 0, x_litros = 1.5, time_a = 0;
+int i = 0;
+
+
+
 const int numLeituras = 20;
 bool deviceConnected = false;
 const float Rinf=5.6,Rsup=6.8; //ate 0.5L
 const float Rinf2=7.25,Rsup2=7.8;
-float tempo, volume1,volume2,volume3,volume4, dist1, dist2, media1, media2,media3,media4,h=0,dist,media = 0,leituras[numLeituras], altura, raio, Voltage=0,tempC=0.0, media7 = 0.0;
-int comando, temp_digital = 0;
+float tempo, volume1,volume2,volume3,volume4, dist1, dist2, media1, media2,media3,media4,h=0,dist,media = 0,leituras[numLeituras], altura, raio, Voltage=0,tempC=0.0,ph=0.0, media7 = 0.0;
+int comando, temp_digital=0, ph_digital = 0;
 const float Ainf=36,Asup=70; //ate 0.5L 72.25
 int leituraAtual = 0;
 float total = 0;
@@ -28,14 +35,20 @@ float vol_oleo=0,vol_etanol=0,massa_soda=0,agua_soda=0,vol_agua=0,agua_quente=0,
 #define echo4 GPIO_NUM_35 //quarto echo
 #define lmdata GPIO_NUM_32 //sensor de temperatura
 #define phdata GPIO_NUM_33 //sensor de ph
-#define fluxo1 GPIO_NUM_25 //sensor de fluxo 1
+
+
+#define portaVazao GPIO_NUM_25 //sensor de fluxo 1
+
+
 #define motor GPIO_NUM_26 //sensor de fluxo 2
 
 //defines da balança
 #define DOUT GPIO_NUM_27  //balanca
 #define CLK GPIO_NUM_14 //balanca
 #define bomba1 GPIO_NUM_23
-#define valvula1 GPIO_NUM_0
+#define valvula1 GPIO_NUM_0 // balanca
+
+#define valvula2 GPIO_NUM_2 //agua quente   
 
 
 #define fluxo3 GPIO_NUM_12  //sensor de fluxo 3
@@ -46,7 +59,6 @@ float vol_oleo=0,vol_etanol=0,massa_soda=0,agua_soda=0,vol_agua=0,agua_quente=0,
 #define bomba5 GPIO_NUM_18
 #define bomba6 GPIO_NUM_5
 #define bomba7 GPIO_NUM_4
-#define valvula2 GPIO_NUM_2
 //#define motor GPIO_NUM_15
 #define tx GPIO_NUM_17
 #define rx GPIO_NUM_16
@@ -72,7 +84,70 @@ float vol_oleo=0,vol_etanol=0,massa_soda=0,agua_soda=0,vol_agua=0,agua_quente=0,
 #define CHARACTERISTIC_UUID_TX5 "2825de61-5255-45ff-9bc7-0917bf54c2de"
 #define CHARACTERISTIC_UUID_RX5 "a0b632f3-10e4-4917-9292-a335b1ff9409"
 
+// interrupção
+void IRAM_ATTR gpio_isr_handler_up(void* arg)
+{
+  pulsos_vazao++;
+  portYIELD_FROM_ISR();
+}
 
+void iniciaVazao(gpio_num_t Port) {
+  gpio_set_direction(Port, GPIO_MODE_INPUT);
+  gpio_set_intr_type(Port, GPIO_INTR_NEGEDGE);
+  gpio_set_pull_mode(Port, GPIO_PULLUP_ONLY);
+  gpio_intr_enable(Port);
+  gpio_install_isr_service(0);
+  gpio_isr_handler_add(Port, gpio_isr_handler_up, (void*) Port);
+  cli(); //desativa a interrupção
+}
+void enche_recipiente()
+{
+  float media_x = 0,tempo_gast=0;
+  digitalWrite(valvula2, HIGH);  //libera a solenoide
+  char valor[8];
+   //media_x = calibra();
+
+    pulsos_vazao = 0;
+    delay(2000);
+    sei();
+    delay(1000);
+    cli();
+
+    vazao = pulsos_vazao / 5.5;
+    vazao = vazao/60;
+    dtostrf(vazao, 2, 2, valor);
+  
+    characteristicTX5->setValue(valor);
+    characteristicTX5->notify();
+    agua_quente=agua_quente-vazao*2;
+    time_a = ((agua_quente / vazao) * 1000); //tempo necessario para encher recipiente com x_litros em mili segundos
+  //dtostr(
+  delay(time_a); //descontando tempo de calibração
+  digitalWrite(valvula2, LOW);
+}
+//float calibra()
+//{
+//  media_a=0;
+//  while (1)
+//  {
+//    pulsos_vazao = 0;
+//    sei();
+//    delay(1000);
+//    cli();
+//
+//    vazao = pulsos_vazao / 5.5;
+//    media_a = media + vazao;
+//    i++;
+//   // if (i == 6)
+//    {
+//      media = media / 360;                    //faz a média retornando em Litros por Segundo, divindo a vazao em L/min por 60*(4 interaçoes da media)
+//      Serial.println(media, 3);
+//      i = 0;                                 //Zera a variável i para uma nova contagem
+//      break;
+//    }
+//  }
+//  return media_a;
+//}
 
 void configura_bomba_solenoide()
 {
@@ -100,7 +175,24 @@ void configura_bomba_solenoide()
 
       
 }
-
+int temp_arduino()
+{
+        while (MySerial.available() > 0) {
+        int byteFromSerial = MySerial.read();
+        // Do something
+        if(byteFromSerial == 4)
+        {
+           MySerial.write(1);
+           digitalWrite(bomba3, LOW);
+         }
+         else
+         {
+            MySerial.write(0); 
+            
+        }
+  return(byteFromSerial = 4)?0:1;
+}
+}
 void rotina_oleo()
 {
     characteristicTX5->setValue("2");
@@ -125,8 +217,12 @@ void rotina_agua_quente()
 {
     characteristicTX5->setValue("4");
     characteristicTX5->notify();
+
+    enche_recipiente();//AGORA VEM A COMUNICAÇÃO COM ARDUINO
+   // while(temp_arduino()==0){};
+    
     digitalWrite(bomba6, HIGH);
-    delay(4000);             //tempo em milisegundos necessario para escoar o volume definido
+    delay(20000);             //tempo em milisegundos necessario para escoar o volume definido
     digitalWrite(bomba6, LOW); 
 }
 
@@ -174,7 +270,7 @@ void finale()
 
 
 HX711 balanca;
-float calibration_factor = 984130;
+float calibration_factor = 884130;
 void inicia_balanca()
 {
     balanca.begin(DOUT, CLK);                          // inicializa a balança
@@ -193,9 +289,9 @@ void rotina_soda_agua()
   float peso_soda=0, y=0, massa_agua=0;
   y=massa_soda+agua_soda; //agua_sooda em mL
   massa_agua=vol_agua;
-  if (vol_agua>1000)
+  if (vol_agua>1)
   {
-      massa_agua=(vol_agua*1000)/2;
+      massa_agua=(vol_agua)/2;
   }
   
   
@@ -212,30 +308,30 @@ void rotina_soda_agua()
     characteristicTX6->notify();
      }
     
-    Serial.println(balanca.get_units(), 3); 
+//    Serial.println(balanca.get_units(), 3); 
     
     if ((peso_soda>=massa_soda) && (controle==0))
       {  
         digitalWrite(valvula1,HIGH);
-        Serial.print("meupau");
+        
         controle=10; 
       }
     else if((peso_soda>=y)&&((controle==10)))
      {
         digitalWrite(valvula1,LOW);
         digitalWrite(bomba1,HIGH);
-        Serial.print("pirutorto");
+        
         controle=20;
        
      }
    
    
-   else if((peso_soda<=0.005) &&(controle==20))
+   else if((peso_soda<=0.035) &&(controle==20))
      {
         digitalWrite(bomba1,LOW);
         digitalWrite(valvula1,HIGH);
         controle=30;
-        Serial.print("papaco");
+        
      } 
     if((peso_soda>=massa_agua) && (controle==30))
      {
@@ -244,7 +340,7 @@ void rotina_soda_agua()
         controle=40;
         
      }
-    if((peso_soda<=0.005) && (controle==40))
+    if((peso_soda<=0.035) && (controle==40))
      {  
         digitalWrite(valvula1,LOW);
         digitalWrite(bomba1,LOW);
@@ -265,7 +361,7 @@ void rotina_soda_agua()
            digitalWrite(bomba1,HIGH); 
            controle=60;     
      }
-     if((peso_soda<=0.005) && (controle==60))
+     if((peso_soda<=0.035) && (controle==60))
      {
            digitalWrite(valvula1,LOW);
            digitalWrite(bomba1,LOW); 
@@ -281,7 +377,108 @@ void rotina_soda_agua()
   
 }
 
+void ultrassonico(gpio_num_t A, gpio_num_t B, gpio_num_t C, gpio_num_t D, gpio_num_t E)
+{
+  gpio_set_direction(A, GPIO_MODE_OUTPUT);
+  gpio_set_direction(B, GPIO_MODE_INPUT);
+  gpio_set_direction(C, GPIO_MODE_INPUT);
+  gpio_set_direction(D, GPIO_MODE_INPUT);
+  gpio_set_direction(E, GPIO_MODE_INPUT);
+}
+void sonico(gpio_num_t A, gpio_num_t B)
+{
+  gpio_set_level(A, 0);
+  delayMicroseconds(2);
+  gpio_set_level(A, 1);
+  delayMicroseconds(10);
+  gpio_set_level(A, 0);
+  tempo = ((pulseIn(B, HIGH)));
+}
+void nivel_alcool(gpio_num_t A, gpio_num_t B)
+{
+   total = total - leituras[leituraAtual];
+  sonico(A,B);
+  dist= tempo*0.034/2;
+  leituras[leituraAtual] = dist;
+  total = total + leituras[leituraAtual];
+  leituraAtual = leituraAtual + 1;
+  if (leituraAtual >= numLeituras)
+  {
+    leituraAtual = 0;
+  }
+  media1 = total / numLeituras; 
+  
+    h=11.1-media1;
 
+  if (media1>6.95)
+     {
+      
+      volume1= (3.1415926*h*(Rinf*Rinf + Rinf*Rsup + Rsup*Rsup )/3000);
+     }
+  else
+     {
+        volume1= 0.5+(3.1415926*(6.95-media)*(Rinf2*Rinf2 + Rinf2*Rsup2 + Rsup2*Rsup2 )/3000);
+      //  volume= 0.5 +(3.1415926*(6.95-media)*7.5*7.5)/1000;
+}
+}
+void nivel_oleo(gpio_num_t A, gpio_num_t B)
+{
+  total = total - leituras[leituraAtual];
+  sonico(A,B);
+  dist= tempo*0.034/2;
+  leituras[leituraAtual] = dist;
+  total = total + leituras[leituraAtual];
+  leituraAtual = leituraAtual + 1;
+  if (leituraAtual >= numLeituras)
+  {
+    leituraAtual = 0;
+  }
+  media2 = total / numLeituras; 
+  
+    h=7.85-media2;
+
+volume2=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
+}
+void nivel_essencias(gpio_num_t A, gpio_num_t B)
+{
+  total = total - leituras[leituraAtual];
+  sonico(A,B);
+  dist= tempo*0.034/2;
+  leituras[leituraAtual] = dist;
+  total = total + leituras[leituraAtual];
+  leituraAtual = leituraAtual + 1;
+  if (leituraAtual >= numLeituras)
+  {
+    leituraAtual = 0;
+  }
+  media3 = total / numLeituras; 
+  
+    h=7.85-media3;
+
+volume3=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
+}
+
+void temp_lm()
+{
+for(int i = 0; i<10; i++)
+  {
+    temp_digital = analogRead(lmdata);   //leitura da gpio 35 da esp32
+    media7 += temp_digital/10;
+  }
+    Voltage = (media7 / 2048.0) * 3300;
+    tempC = Voltage * 0.1; 
+}
+
+void ph_leitura()
+{
+for(int i = 0; i<10; i++)
+  {
+    ph_digital = analogRead(phdata);   //leitura da gpio 35 da esp32
+    media7 += temp_digital/10;
+  }
+    Voltage = (media7 / 4095.0) * 3.300;
+    ph = (Voltage*(-5.7)+21.44); 
+}
 
 
 class CharacteristicCallbacks: public BLECharacteristicCallbacks {
@@ -345,87 +542,6 @@ class ServerCallbacks: public BLEServerCallbacks {
       deviceConnected = false;
     }
 };
-
-void ultrassonico(gpio_num_t A, gpio_num_t B, gpio_num_t C, gpio_num_t D, gpio_num_t E)
-{
-  gpio_set_direction(A, GPIO_MODE_OUTPUT);
-  gpio_set_direction(B, GPIO_MODE_INPUT);
-  gpio_set_direction(C, GPIO_MODE_INPUT);
-  gpio_set_direction(D, GPIO_MODE_INPUT);
-  gpio_set_direction(E, GPIO_MODE_INPUT);
-}
-void sonico(gpio_num_t A, gpio_num_t B)
-{
-  gpio_set_level(A, 0);
-  delayMicroseconds(2);
-  gpio_set_level(A, 1);
-  delayMicroseconds(10);
-  gpio_set_level(A, 0);
-  tempo = ((pulseIn(B, HIGH)));
-}
-void nivel_alcool(gpio_num_t A, gpio_num_t B)
-{
-   total = total - leituras[leituraAtual];
-  sonico(A,B);
-  dist= tempo*0.034/2;
-  leituras[leituraAtual] = dist;
-  total = total + leituras[leituraAtual];
-  leituraAtual = leituraAtual + 1;
-  if (leituraAtual >= numLeituras)
-  {
-    leituraAtual = 0;
-  }
-  media1 = total / numLeituras; 
-  
-    h=11.1-media;
-
-  if (media>6.95)
-     {
-      
-      volume1= (3.1415926*h*(Rinf*Rinf + Rinf*Rsup + Rsup*Rsup )/3000);
-     }
-  else
-     {
-        volume1= 0.5+(3.1415926*(6.95-media)*(Rinf2*Rinf2 + Rinf2*Rsup2 + Rsup2*Rsup2 )/3000);
-      //  volume= 0.5 +(3.1415926*(6.95-media)*7.5*7.5)/1000;
-}
-}
-void nivel_oleo(gpio_num_t A, gpio_num_t B)
-{
-  total = total - leituras[leituraAtual];
-  sonico(A,B);
-  dist= tempo*0.034/2;
-  leituras[leituraAtual] = dist;
-  total = total + leituras[leituraAtual];
-  leituraAtual = leituraAtual + 1;
-  if (leituraAtual >= numLeituras)
-  {
-    leituraAtual = 0;
-  }
-  media = total / numLeituras; 
-  
-    h=7.85-media;
-
-volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
-}
-void nivel_essencias(gpio_num_t A, gpio_num_t B)
-{
-  total = total - leituras[leituraAtual];
-  sonico(A,B);
-  dist= tempo*0.034/2;
-  leituras[leituraAtual] = dist;
-  total = total + leituras[leituraAtual];
-  leituraAtual = leituraAtual + 1;
-  if (leituraAtual >= numLeituras)
-  {
-    leituraAtual = 0;
-  }
-  media = total / numLeituras; 
-  
-    h=7.85-media;
-
-volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
-}
 void setup()
 {
 
@@ -461,10 +577,11 @@ void setup()
   characteristicTX5 ->addDescriptor(new BLE2902());
   characteristicTX6 ->addDescriptor(new BLE2902());
 
-  BLECharacteristic *characteristic0 = service6->createCharacteristic(CHARACTERISTIC_UUID_RX5, BLECharacteristic::PROPERTY_WRITE); 
-                    BLECharacteristic *characteristic2 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX3, BLECharacteristic::PROPERTY_READ);
-
+BLECharacteristic *characteristic0 = service6->createCharacteristic(CHARACTERISTIC_UUID_RX5, BLECharacteristic::PROPERTY_WRITE); 
+                    characteristicTX3 = service2->createCharacteristic(CHARACTERISTIC_UUID_TX3, BLECharacteristic::PROPERTY_READ);
+  characteristicTX3 ->addDescriptor(new BLE2902());
   characteristic0->setCallbacks(new CharacteristicCallbacks());//seta a funcao de callback no servico 5.
+
 
   // Inicia os servicos
   service0->start();
@@ -477,47 +594,37 @@ void setup()
   // Inicia o advertisement (descoberta do ESP32)
   server->getAdvertising()->start();
 
-//inicia_sensores_solenoides_bombas
-
   inicia_balanca(); //iniciando a balança
   configura_bomba_solenoide();
+  iniciaVazao((gpio_num_t) portaVazao);
 
 
 
   xTaskCreatePinnedToCore(loop2, "loop2", 8192, NULL, 2, NULL, 1);//Cria a tarefa "loop2()" com prioridade 1, atribuída ao core 0
-  delay(1); //delayzinho só pra não acionar o watchdog timer
+  delay(500); //delayzinho só pra não acionar o watchdog timer
 }
 
 void loop()//O loop() sempre será atribuído ao core 1 automaticamente pelo sistema, com prioridade 1
 {
   // coloque aqui os códigos para mandar os níveis dos reservatórios e da temperatura do tanque para o aplicativo.
   //Lembre-se de transformar tudo para string antes de mandar
-  total = total - leituras[leituraAtual];
-  sonico(trigger,echo1);
-  dist= tempo*0.034/2;
-  leituras[leituraAtual] = dist;
-  total = total + leituras[leituraAtual];
-  leituraAtual = leituraAtual + 1;
-  if (leituraAtual >= numLeituras)
-  {
-    leituraAtual = 0;
-  }
-  media = total / numLeituras; 
+  //total = total - leituras[leituraAtual];
+  //sonico(trigger,echo1);
+  // dist= tempo*0.034/2;
+   //leituras[leituraAtual] = dist;
+   //total = total + leituras[leituraAtual];
+   //leituraAtual = leituraAtual + 1;
+   //if (leituraAtual >= numLeituras)
+   //{
+  //   leituraAtual = 0;
+ //  }
+  // media = total / numLeituras; 
   
-    h=7.85-media;
+   //  h=7.85-media;
 
-volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
+ //volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
 
-   for(int i = 0; i<10; i++)
-  {
-    temp_digital = analogRead(lmdata);   //leitura da gpio 35 da esp32
-    media7 += temp_digital/10;
-  }
-    Voltage = (media7 / 4095.0) * 3300;
-    tempC = Voltage * 0.1; 
-
-
- // media1 = (dist1 * (1 - 0.8)) + (media1 * 0.8);
+// media1 = (dist1 * (1 - 0.8)) + (media1 * 0.8);
   //media2 = (dist2 * (1 - 0.8)) + (media2 * 0.8);
   //  altura = 8.5-media1;
   //  if (altura<0)
@@ -526,19 +633,38 @@ volume1=(h)*(Ainf+Asup+sqrt(Ainf*Asup))/3000;
   //}
   // raio = 0.14705882*altura +2.25;
   // volume = (3.141592*(altura)/3)*(raio*raio + raio*2.25 +2.25*2.25);
-  char txString[8], txString2[8];
-
-  dtostrf(temp_digital, 2, 2, txString);
-  dtostrf(tempC, 2, 2, txString2);
-  characteristicTX0->setValue(txString); //seta o valor que a caracteristica notificará (enviar)
-  characteristicTX0->notify();
-  characteristicTX4->setValue(txString2); //seta o valor que a caracteristica notificará (enviar)
-  characteristicTX4->notify();
+  char txString1[8], txString2[8],txString3[8],txString4[8],txString5[8],txString6[8];
+  nivel_alcool(trigger,echo3);
+  nivel_oleo(trigger,echo4);
+  nivel_essencias(trigger,echo1);
+  nivel_essencias(trigger,echo2);
+  temp_lm();
+  ph_leitura();
+  
+  //dtostrf(temp_digital, 2, 2, txString);
+//  dtostrf(volume1, 2, 2, txString1);
+//  dtostrf(volume2, 2, 2, txString2);
+//  dtostrf(volume3, 2, 2, txString3);
+//  dtostrf(volume4, 2, 2, txString4);
+//  dtostrf(tempC, 2, 2, txString5);
+//  characteristicTX0->setValue(txString1); //seta o valor que a caracteristica notificará (enviar)
+//  characteristicTX0->notify();
+//  characteristicTX1->setValue(txString2); //seta o valor que a caracteristica notificará (enviar)
+//  characteristicTX1->notify();
+//  characteristicTX2->setValue(txString3); //seta o valor que a caracteristica notificará (enviar)
+//  characteristicTX2->notify();
+//  characteristicTX3->setValue(txString4); //seta o valor que a caracteristica notificará (enviar)
+//  characteristicTX3->notify();
+//  characteristicTX4->setValue(txString5); //seta o valor que a caracteristica notificará (enviar)
+//  characteristicTX4->notify();
+//  characteristicTX6->setValue(txString6); //seta o valor que a caracteristica notificará (enviar)
+//  characteristicTX6->notify();
+// 
   media7=0;
   //Voltage = 0.0;
   //tempC = 0.0;
   //temp_digital=0;
-  delay(200);//Mantem o processador 1 em estado ocioso por 0,1seg
+  delay(100);//Mantem o processador 1 em estado ocioso por 0,1seg
 }
 
 void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
@@ -552,6 +678,31 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
   
     while(comando==0)
     {
+       char txString1[8], txString2[8],txString3[8],txString4[8],txString5[8],txString6[8];
+  nivel_alcool(trigger,echo3);
+  nivel_oleo(trigger,echo4);
+  nivel_essencias(trigger,echo1);
+  nivel_essencias(trigger,echo2);
+  temp_lm();
+  ph_leitura();
+      dtostrf(volume1, 2, 2, txString1);
+  dtostrf(volume2, 2, 2, txString2);
+  dtostrf(volume3, 2, 2, txString3);
+  dtostrf(volume4, 2, 2, txString4);
+  dtostrf(tempC, 2, 2, txString5);
+  characteristicTX0->setValue(txString1); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX0->notify();
+  characteristicTX1->setValue(txString2); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX1->notify();
+  characteristicTX2->setValue(txString3); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX2->notify();
+  characteristicTX3->setValue(txString4); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX3->notify();
+  characteristicTX4->setValue(txString5); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX4->notify();
+  characteristicTX6->setValue(txString6); //seta o valor que a caracteristica notificará (enviar)
+  characteristicTX6->notify();
+ 
       
     characteristicTX5->setValue("pode comecar");
     characteristicTX5->notify(); 
@@ -566,7 +717,6 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
       vol_essencia2=0;    // Em mL(TEMPO NECESSARIO-CALCULAR)
    
     }
-   delay(100);
    switch (comando)
     {
       case 1://receita 1 sem essência
@@ -575,7 +725,7 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
           massa_soda=0.150;   // massa da soda em kg
           agua_soda=0.400;     // Em litros(SENSOR DE BALANÇA)    
           vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
-          agua_quente=1000;    // Em litros(SENSOR DE FLUXA)
+          agua_quente=1.3;    // Em litros(SENSOR DE FLUXA)
           vol_essencia1=0;    // Em mL (TEMPO NECESSARIO-CALCULAR)
           vol_essencia2=0;     // Em mL(TEMPO NECESSARIO-CALCULAR)
           comando = 0;      
@@ -588,7 +738,7 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
           massa_soda=0.200;   // massa da soda em kg
           agua_soda=0.450 ;    // Em litros(SENSOR DE BALANÇA)    
           vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
-          agua_quente=0.5;    // Em litros(SENSOR DE FLUXA)
+          agua_quente=1.5;    // Em litros(SENSOR DE FLUXA)
           vol_essencia1=0;    // Em mL (TEMPO NECESSARIO-CALCULAR)
           vol_essencia2=0 ;    // Em mL(TEMPO NECESSARIO-CALCULAR)
           comando = 0;      
@@ -613,7 +763,7 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
           massa_soda=0.150;   // massa da soda em kg
           agua_soda=0.400 ;    // Em litros(SENSOR DE BALANÇA)    
           vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
-          agua_quente=4000;    // Em litros(SENSOR DE FLUXA)
+          agua_quente=1.5;    // Em litros(SENSOR DE FLUXA)
           vol_essencia1=1000;    // Em mL (TEMPO NECESSARIO-CALCULAR)
           vol_essencia2=0 ;    // Em mL(TEMPO NECESSARIO-CALCULAR)
           comando = 0;      
@@ -624,7 +774,7 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
           massa_soda=0.150;   // massa da soda em kg
           agua_soda=0.400;     // Em litros(SENSOR DE BALANÇA)    
           vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
-          agua_quente=0.5;    // Em litros(SENSOR DE FLUXA)
+          agua_quente=1.5;    // Em litros(SENSOR DE FLUXA)
           vol_essencia1=20;    // Em mL (TEMPO NECESSARIO-CALCULAR)
           vol_essencia2=0 ;    // Em mL(TEMPO NECESSARIO-CALCULAR)
           comando = 0;      
@@ -649,7 +799,7 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
           massa_soda=0.150;   // massa da soda em kg
           agua_soda=0.400 ;    // Em litros(SENSOR DE BALANÇA)    
           vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
-          agua_quente=0.5;    // Em litros(SENSOR DE FLUXA)
+          agua_quente=1.5;    // Em litros(SENSOR DE FLUXA)
           vol_essencia1=20;    // Em mL (TEMPO NECESSARIO-CALCULAR)
           vol_essencia2=0 ;   // Em mL(TEMPO NECESSARIO-CALCULAR)
           comando = 0;      
@@ -660,7 +810,7 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
           massa_soda=0.150;   // massa da soda em kg
           agua_soda=0.400;     // Em litros(SENSOR DE BALANÇA)    
           vol_agua=0.400;       // Em litros(SENSOR DE BALANÇA)
-          agua_quente=0.5;    // Em litros(SENSOR DE FLUXA)
+          agua_quente=1.5;    // Em litros(SENSOR DE FLUXA)
           vol_essencia1=20;    // Em mL (TEMPO NECESSARIO-CALCULAR)
           vol_essencia2=0;     // Em mL(TEMPO NECESSARIO-CALCULAR)
           comando = 0;      
@@ -683,27 +833,28 @@ void loop2(void*z)//Atribuímos o loop2 ao core 0, com prioridade 1
         break;
     
     }
-    //aqui inicia a maquina após selecionar os ingredientes;
-    // rotina_soda_agua();  //rotina para dosar a quantidade de agua, soda.
-    rotina_oleo(); 
-    rotina_alcool();
-    rotina_essencia_1();
-      //if(vol_essencia1>0)
-      //{
+   //aqui inicia a maquina após selecionar os ingredientes;
+   //  rotina_soda_agua();  //rotina para dosar a quantidade de agua, soda.
+   //   rotina_oleo(); 
+   //   rotina_alcool();
+    //  rotina_essencia_1();
+    //  if(vol_essencia1>0)
+   /*   {
            rotina_essencia_1();
-      //}
-      //else if(vol_essencia2>0)
-      //{
-     //     rotina_essencia_2();  
-      //}
-      rotina_agua_quente();
+      }
+      else if(vol_essencia2>0)
+      {
+           rotina_essencia_2();  
+      }
+      
       rotina_motor(); 
      
       finale();
       comando=0;
-      delay(100);
+      */
+      rotina_agua_quente();
 
 }
-
+delay(100);
 
 }
