@@ -190,7 +190,7 @@ int temp_arduino()
             MySerial.write(0); 
             
         }
-  return(byteFromSerial = 4)?0:1;
+  return(byteFromSerial == 4)?0:1;
 }
 }
 void rotina_oleo()
@@ -219,7 +219,7 @@ void rotina_agua_quente()
     characteristicTX5->notify();
 
     enche_recipiente();//AGORA VEM A COMUNICAÇÃO COM ARDUINO
-   // while(temp_arduino()==0){};
+    while(temp_arduino()==0){};
     
     digitalWrite(bomba6, HIGH);
     delay(20000);             //tempo em milisegundos necessario para escoar o volume definido
