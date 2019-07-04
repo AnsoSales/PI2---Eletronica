@@ -190,6 +190,7 @@ int temp_arduino()
             MySerial.write(0); 
             
         }
+        digitalWrite(bomba3, HIGH);  
   return(byteFromSerial == 4)?0:1;
 }
 }
