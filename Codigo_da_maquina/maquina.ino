@@ -321,8 +321,11 @@ void rotina_motor_l()
 
 void finale()
 {
+    characteristicTX5->setValue("FIM");
+    characteristicTX5->notify();
     String phstr;
     char stringtotal[8];
+    delay(5000);
     //stringtotal = String();
    // dtostrf(ph,2,2,phstr);
    
@@ -334,11 +337,12 @@ void finale()
     //while(ph_leitura!=0)
     //{
     ph_leitura();
-    
+    if (ph>7)
+    {
     dtostrf(ph,2,2,stringtotal);
-    characteristicTX5->setValue("PH 8");
+    characteristicTX5->setValue(stringtotal);
     characteristicTX5->notify();
-    //}
+    }
 }
 
 
