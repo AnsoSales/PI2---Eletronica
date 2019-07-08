@@ -133,8 +133,8 @@ void enche_recipiente()
     vazao = vazao/60;
     dtostrf(vazao, 2, 2, valor);
   
-    characteristicTX5->setValue(valor);
-    characteristicTX5->notify();
+   // characteristicTX5->setValue(valor);
+   // characteristicTX5->notify();
     agua_quente=agua_quente;
     time_a = ((agua_quente / vazao) * 2700); //tempo necessario para encher recipiente com x_litros em mili segundos
   //dtostr(
@@ -313,7 +313,10 @@ void rotina_motor_l()
     digitalWrite(motor, HIGH);
     //delay(1200000);             //tempo em milisegundos necessario para escoar o volume definido
     delay(120000);
-    digitalWrite(motor, LOW); 
+    digitalWrite(motor, LOW);
+    characteristicTX5->setValue("limpeza concluida");
+    characteristicTX5->notify();
+    delay(5000);
 }
 
 
@@ -359,7 +362,8 @@ void inicia_balanca()
 
 void limpeza()
 {
- 
+  characteristicTX5->setValue("iniciando limpeza");
+  characteristicTX5->notify();
   delay(100);
   int controle=0;
   float peso_soda=0;    
