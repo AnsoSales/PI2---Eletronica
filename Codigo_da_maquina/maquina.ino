@@ -23,7 +23,7 @@ HardwareSerial MySerial(1);
 static void atualizaVazao();
 volatile int pulsos_vazao = 0;
 float vazao = 0, media_a = 0, x_litros = 1.5, time_a = 0;
-int i = 0;
+int i=0,xaxado = 0;
 
 
 
@@ -326,9 +326,12 @@ void finale()
 {
     characteristicTX5->setValue("FIM");
     characteristicTX5->notify();
-    String phstr;
+ //   String phstr;
     char stringtotal[8];
     delay(5000);
+    xaxado = 10;
+    delay(5000);
+    xaxado = 0;
     //stringtotal = String();
    // dtostrf(ph,2,2,phstr);
    
@@ -339,13 +342,14 @@ void finale()
 //    }
     //while(ph_leitura!=0)
     //{
-    ph_leitura();
-    if (ph>7)
-    {
+   // ph_leitura();
+     
+    
     dtostrf(ph,2,2,stringtotal);
-    characteristicTX5->setValue(stringtotal);
-    characteristicTX5->notify();
-    }
+  //  characteristicTX5->setValue(stringtotal);
+  //  characteristicTX5->notify();
+ 
+    
 }
 
 
@@ -829,6 +833,11 @@ void loop()//O loop() sempre será atribuído ao core 1 automaticamente pelo sis
   characteristicTX6->setValue(txString6); //seta o valor que a caracteristica notificará (enviar)
   characteristicTX6->notify();
   media7=0;
+    if (xaxado = 10)
+    {
+    characteristicTX5->setValue(stringtotal); //seta o valor que a caracteristica notificará (enviar)
+    characteristicTX5->notify();
+    }
   //Voltage = 0.0;
   //tempC = 0.0;
   //temp_digital=0;
