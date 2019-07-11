@@ -3,7 +3,7 @@
 
  
 
-const float VelSon = 34000.0;
+const float VelSom = 34000.0;
 
 const float Ainf=136.89,Asup=338.56; //ate 0.5L 72.25
  
@@ -35,29 +35,29 @@ void loop()
   iniciarTrigger();
  
  
-  unsigned long tiempo = pulseIn(PinEcho, HIGH);
+  unsigned long tempo = pulseIn(PinEcho, HIGH);
  
 
-  float distancia = tiempo * 0.000001 * VelSon / 2.0;
+  float distancia = tempo * 0.000001 * VelSom/ 2.0;
  
 
-  lecturas[lecturaActual] = distancia;
+  leituras[leituraAtual] = distancia;
  
 
-  total = total + lecturas[lecturaActual];
+  total = total + leituras[leituraAtual];
  
 
-  lecturaActual = lecturaActual + 1;
+  leituraActual = leituraAtual + 1;
  
 
-  if (lecturaActual >= numLecturas)
+  if (leituraAtual >= numLeituras)
   {
     primeraMedia = true;
-    lecturaActual = 0;
+    leituraAtual = 0;
   }
  
 
-  media = total / numLecturas;
+  media = total / numLeituras;
      
 	
 
