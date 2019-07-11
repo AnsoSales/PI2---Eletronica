@@ -1,8 +1,8 @@
 #define trigger GPIO_NUM_26
 #define echo GPIO_NUM_25
 
-const int numLecturas = 20;
-float tempo,h=0,dist,media = 0,lecturas[numLecturas],volume=0;
+const int numLeituras = 20;
+float tempo,h=0,dist,media = 0,leituras[numLeituras],volume=0;
 
 //const float Ainf=130,Asup=300; //ate 0.5L 72.25
 
@@ -12,8 +12,8 @@ const float Rinf2=7.25,Rsup2=7.8;
 
 
 
-int lecturaActual = 0; // Lectura por la que vamos
-float total = 0; // Total de las que llevamos
+int lecturaActual = 0; 
+float total = 0
 
 
 void ultrassonico(gpio_num_t A, gpio_num_t B)
@@ -38,9 +38,9 @@ void setup() {
  
 Serial.begin(115200); 
   ultrassonico(trigger,echo);
-  for (int i = 0; i < numLecturas; i++)
+  for (int i = 0; i < numLeituras; i++)
   {
-    lecturas[i] = 0;
+    leituras[i] = 0;
   }
 
 
@@ -48,7 +48,7 @@ Serial.begin(115200);
 }
 
 void loop() {
-  total = total - lecturas[lecturaActual];
+  total = total - leituras[leituraAtual];
   sonico(trigger,echo);
   dist= tempo*0.034/2;
   lecturas[lecturaActual] = dist;
@@ -56,9 +56,9 @@ void loop() {
   lecturaActual = lecturaActual + 1;
   if (lecturaActual >= numLecturas)
   {
-    lecturaActual = 0;
+    leituraAtual = 0;
   }
-  media = total / numLecturas; 
+  media = total / numLeituras; 
   
     h=11.1-media;
 
